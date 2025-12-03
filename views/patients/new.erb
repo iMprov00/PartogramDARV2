@@ -17,7 +17,29 @@
                  placeholder="Иванова Мария Петровна">
         </div>
         
-        <div class="col-md-6 mb-3">
+        <div class="col-md-3 mb-3">
+          <label for="age" class="form-label">Возраст</label>
+          <input type="number" 
+                 class="form-control touch-friendly" 
+                 id="age" 
+                 name="patient[age]" 
+                 min="14"
+                 max="60"
+                 placeholder="30">
+        </div>
+        
+        <div class="col-md-3 mb-3">
+          <label for="gestational_age" class="form-label">Срок беременности (нед.)</label>
+          <input type="number" 
+                 class="form-control touch-friendly" 
+                 id="gestational_age" 
+                 name="patient[gestational_age]" 
+                 min="20"
+                 max="45"
+                 placeholder="40">
+        </div>
+        
+        <div class="col-md-4 mb-3">
           <label for="admission_date" class="form-label">Дата поступления <span class="text-danger">*</span></label>
           <input type="date" 
                  class="form-control touch-friendly" 
@@ -27,13 +49,71 @@
                  value="<%= Date.today %>">
         </div>
         
+        <div class="col-md-4 mb-3">
+          <label for="history_number" class="form-label">№ истории болезни</label>
+          <input type="text" 
+                 class="form-control touch-friendly" 
+                 id="history_number" 
+                 name="patient[history_number]" 
+                 placeholder="Номер истории">
+        </div>
+        
+        <div class="col-md-4 mb-3">
+          <label for="parity" class="form-label">Партитет</label>
+          <input type="number" 
+                 class="form-control touch-friendly" 
+                 id="parity" 
+                 name="patient[parity]" 
+                 min="0"
+                 placeholder="1">
+        </div>
+        
+        <div class="col-md-4 mb-3">
+          <label for="labor_start" class="form-label">Начало родов</label>
+          <input type="datetime-local" 
+                 class="form-control touch-friendly" 
+                 id="labor_start" 
+                 name="patient[labor_start]">
+        </div>
+        
+        <div class="col-md-4 mb-3">
+          <label for="active_phase_start" class="form-label">Начало активной фазы</label>
+          <input type="datetime-local" 
+                 class="form-control touch-friendly" 
+                 id="active_phase_start" 
+                 name="patient[active_phase_start]">
+        </div>
+        
+        <div class="col-md-4 mb-3">
+          <label for="membrane_rupture" class="form-label">Разрыв плодных оболочек</label>
+          <input type="datetime-local" 
+                 class="form-control touch-friendly" 
+                 id="membrane_rupture" 
+                 name="patient[membrane_rupture]">
+        </div>
+        
         <div class="col-md-6 mb-3">
           <label for="status" class="form-label">Статус <span class="text-danger">*</span></label>
           <select class="form-select touch-friendly" id="status" name="patient[status]" required>
-            <% Patient::STATUSES.each_value do |status| %>
-              <option value="<%= status %>"><%= status %></option>
+            <% if defined?(Patient) && Patient.const_defined?(:STATUSES) %>
+              <% Patient::STATUSES.each do |key, value| %>
+                <option value="<%= value %>"><%= value %></option>
+              <% end %>
+            <% else %>
+              <option value="роды не начались">роды не начались</option>
+              <option value="в родах">в родах</option>
+              <option value="роды завершены">роды завершены</option>
             <% end %>
           </select>
+        </div>
+        
+        <div class="col-12 mb-3">
+          <label for="risk_factors" class="form-label">Значимые факторы риска</label>
+          <textarea class="form-control touch-friendly" 
+                    id="risk_factors" 
+                    name="patient[risk_factors]" 
+                    rows="3"
+                    placeholder="Например: гестационный диабет, преэклампсия, многоплодная беременность..."></textarea>
         </div>
         
         <div class="col-12 mb-3">

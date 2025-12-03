@@ -1,3 +1,4 @@
+# models/patient.rb
 class Patient < ActiveRecord::Base
   validates :full_name, presence: true
   validates :admission_date, presence: true
@@ -7,7 +8,15 @@ class Patient < ActiveRecord::Base
     not_started: "роды не начались",
     in_progress: "в родах",
     completed: "роды завершены"
-  }
+  }.freeze
+  
+  # Сериализация для JSON API
+  def as_json(options = {})
+    super(options.merge(
+      except: [:updated_at],
+      methods: [:status_color, :timer_text, :timer_class, :partogram_button_text, :partogram_button_class]
+    ))
+  end
   
   def status_color
     case status
@@ -24,7 +33,7 @@ class Patient < ActiveRecord::Base
   
   def timer_text
     if status == STATUSES[:in_progress]
-      "00:00:00" # Заглушка для таймера
+      calculate_timer_duration
     else
       "Таймер не активен"
     end
@@ -58,5 +67,18 @@ class Patient < ActiveRecord::Base
     when STATUSES[:completed]
       "btn-outline-secondary"
     end
+  end
+  
+  private
+  
+  def calculate_timer_duration
+    return "00:00:00" if labor_start.nil?
+    
+    duration = (Time.now - labor_start).to_i
+    hours = duration / 3600
+    minutes = (duration % 3600) / 60
+    seconds = duration % 60
+    
+    format("%02d:%02d:%02d", hours, minutes, seconds)
   end
 end

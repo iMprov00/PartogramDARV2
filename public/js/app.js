@@ -1,87 +1,73 @@
-document.addEventListener('DOMContentLoaded', function() {
-  // Инициализация
-  initFilters();
-  initDeleteButtons();
-  initAutoComplete();
-  initTouchOptimizations();
-  
-  // Анимация навигации
-  animateNavbar();
-  
-  // Анимация строк таблицы
-  animateTableRows();
-});
+// Упрощенная версия app.js с исправлениями
+console.log('app.js loaded successfully');
 
-// Инициализация фильтров
-function initFilters() {
-  const dateFilterToggle = document.getElementById('date-filter-toggle');
-  const dateFilter = document.getElementById('date-filter');
-  
-  if (dateFilterToggle && dateFilter) {
-    dateFilterToggle.addEventListener('change', function() {
-      dateFilter.disabled = !this.checked;
-      if (this.checked) {
-        dateFilter.focus();
-      }
-    });
-  }
-  
-  // Поиск при вводе
-  const searchInput = document.getElementById('search-input');
-  if (searchInput) {
-    let searchTimeout;
-    searchInput.addEventListener('input', function() {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => {
-        applyFilters();
-      }, 300); // Задержка 300ms
-    });
-  }
-  
-  // Фильтрация при изменении статуса
-  const statusFilter = document.getElementById('status-filter');
-  if (statusFilter) {
-    statusFilter.addEventListener('change', applyFilters);
-  }
-  
-  // Фильтрация при изменении даты
-  if (dateFilter) {
-    dateFilter.addEventListener('change', applyFilters);
-  }
-}
-
-// Применение фильтров
+// Глобальная функция applyFilters
 function applyFilters() {
+  console.log('applyFilters function called');
+  
   const search = document.getElementById('search-input')?.value || '';
   const status = document.getElementById('status-filter')?.value || 'all';
   const dateFilterToggle = document.getElementById('date-filter-toggle');
   const date = document.getElementById('date-filter')?.value || '';
   const filterByDate = dateFilterToggle?.checked ? 'true' : 'false';
   
+  console.log('Filter parameters:', { search, status, date, filterByDate });
+  
   // Показать индикатор загрузки
-  showLoading();
+  const loadingDiv = document.getElementById('loading');
+  if (loadingDiv) loadingDiv.style.display = 'block';
+  
+  // Формируем URL с параметрами
+  const url = `/api/patients?search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}&admission_date=${encodeURIComponent(date)}&filter_by_date=${encodeURIComponent(filterByDate)}`;
+  
+  console.log('Fetching from URL:', url);
   
   // Запрос к API
-  fetch(`/api/patients?search=${encodeURIComponent(search)}&status=${status}&admission_date=${date}&filter_by_date=${filterByDate}`)
-    .then(response => response.json())
+  fetch(url)
+    .then(response => {
+      console.log('API Response status:', response.status);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
     .then(patients => {
+      console.log('Received patients:', patients);
       updatePatientsTable(patients);
       updatePatientsCount(patients.length);
-      hideLoading();
+      if (loadingDiv) loadingDiv.style.display = 'none';
     })
     .catch(error => {
-      console.error('Error:', error);
-      hideLoading();
-      alert('Ошибка при загрузке данных');
+      console.error('Error fetching patients:', error);
+      if (loadingDiv) loadingDiv.style.display = 'none';
+      alert('Ошибка при загрузке данных: ' + error.message);
     });
 }
 
 // Обновление таблицы пациентов
 function updatePatientsTable(patients) {
+  console.log('Updating table with', patients.length, 'patients');
+  
   const tbody = document.getElementById('patients-tbody');
-  if (!tbody) return;
+  if (!tbody) {
+    console.error('Table body not found!');
+    return;
+  }
   
   tbody.innerHTML = '';
+  
+  if (patients.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center py-4 text-muted">
+          <i class="bi bi-search display-4 d-block mb-3"></i>
+          <h4>Пациенты не найдены</h4>
+          <p>Попробуйте изменить параметры поиска</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
   
   patients.forEach((patient, index) => {
     const row = document.createElement('tr');
@@ -93,15 +79,15 @@ function updatePatientsTable(patients) {
     if (patient.status === 'в родах') statusColor = 'danger';
     if (patient.status === 'роды завершены') statusColor = 'success';
     
-    // Определяем текст и класс таймера
+    // Таймер
     let timerText = 'Таймер не активен';
     let timerClass = 'timer-completed';
     if (patient.status === 'в родах') {
-      timerText = '00:00:00'; // Заглушка
+      timerText = '00:00:00';
       timerClass = 'timer-danger';
     }
     
-    // Определяем текст и класс кнопки партограммы
+    // Кнопка партограммы
     let partogramButtonText = 'Партограмма';
     let partogramButtonClass = 'btn-outline-secondary';
     if (patient.status === 'роды не начались') {
@@ -110,14 +96,16 @@ function updatePatientsTable(patients) {
     } else if (patient.status === 'в родах') {
       partogramButtonText = 'Перейти к партограмме';
       partogramButtonClass = 'btn-primary';
-    } else if (patient.status === 'роды завершены') {
-      partogramButtonText = 'Посмотреть партограмму';
-      partogramButtonClass = 'btn-outline-secondary';
     }
     
     // Форматируем дату
-    const admissionDate = new Date(patient.admission_date);
-    const formattedDate = admissionDate.toLocaleDateString('ru-RU');
+    let formattedDate = '';
+    try {
+      const admissionDate = new Date(patient.admission_date);
+      formattedDate = admissionDate.toLocaleDateString('ru-RU');
+    } catch (e) {
+      formattedDate = patient.admission_date;
+    }
     
     row.innerHTML = `
       <td>${index + 1}</td>
@@ -159,9 +147,77 @@ function updatePatientsTable(patients) {
     tbody.appendChild(row);
   });
   
-  // Переинициализация кнопок удаления
+  // Инициализируем кнопки удаления
   initDeleteButtons();
-  animateTableRows();
+}
+
+// Инициализация кнопок удаления
+function initDeleteButtons() {
+  console.log('Initializing delete buttons');
+  
+  const deleteButtons = document.querySelectorAll('.delete-btn');
+  const deleteModal = document.getElementById('deleteModal');
+  
+  if (!deleteModal) {
+    console.error('Delete modal not found');
+    return;
+  }
+  
+  const modal = new bootstrap.Modal(deleteModal);
+  const patientNameElement = document.getElementById('patient-name-to-delete');
+  const confirmDeleteButton = document.getElementById('confirm-delete');
+  
+  let patientToDelete = null;
+  
+  deleteButtons.forEach(button => {
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+      patientToDelete = this.dataset.patientId;
+      const patientName = this.dataset.patientName;
+      
+      console.log('Preparing to delete patient:', patientName, patientToDelete);
+      
+      if (patientNameElement) {
+        patientNameElement.textContent = patientName;
+      }
+      
+      modal.show();
+    });
+  });
+  
+  if (confirmDeleteButton) {
+    confirmDeleteButton.addEventListener('click', function() {
+      if (!patientToDelete) {
+        alert('Ошибка: пациент не выбран для удаления');
+        return;
+      }
+      
+      console.log('Deleting patient:', patientToDelete);
+      
+      // Создаем форму для отправки DELETE запроса
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/patients/${patientToDelete}`;
+      
+      const methodInput = document.createElement('input');
+      methodInput.type = 'hidden';
+      methodInput.name = '_method';
+      methodInput.value = 'DELETE';
+      
+      const csrfToken = document.querySelector('meta[name="csrf-token"]');
+      if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'authenticity_token';
+        csrfInput.value = csrfToken.content;
+        form.appendChild(csrfInput);
+      }
+      
+      form.appendChild(methodInput);
+      document.body.appendChild(form);
+      form.submit();
+    });
+  }
 }
 
 // Обновление счетчика пациентов
@@ -172,172 +228,57 @@ function updatePatientsCount(count) {
   }
 }
 
-// Инициализация кнопок удаления
-function initDeleteButtons() {
-  const deleteButtons = document.querySelectorAll('.delete-btn');
-  const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-  const patientNameElement = document.getElementById('patient-name-to-delete');
-  const confirmDeleteButton = document.getElementById('confirm-delete');
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM fully loaded');
   
-  let patientToDelete = null;
+  // Инициализация фильтров
+  const dateFilterToggle = document.getElementById('date-filter-toggle');
+  const dateFilter = document.getElementById('date-filter');
   
-  deleteButtons.forEach(button => {
-    button.addEventListener('click', function(e) {
+  if (dateFilterToggle && dateFilter) {
+    dateFilterToggle.addEventListener('change', function() {
+      dateFilter.disabled = !this.checked;
+    });
+  }
+  
+  // Кнопка "Применить фильтры"
+  const applyFiltersBtn = document.getElementById('apply-filters-btn');
+  if (applyFiltersBtn) {
+    applyFiltersBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      const patientId = this.dataset.patientId;
-      const patientName = this.dataset.patientName;
-      
-      patientToDelete = patientId;
-      patientNameElement.textContent = patientName;
-      deleteModal.show();
-    });
-  });
-  
-  if (confirmDeleteButton) {
-    confirmDeleteButton.addEventListener('click', function() {
-      if (!patientToDelete) return;
-      
-      // Отправка DELETE запроса
-      fetch(`/patients/${patientToDelete}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      })
-      .then(response => {
-        if (response.ok) {
-          // Перезагружаем страницу для обновления списка
-          window.location.reload();
-        } else {
-          alert('Ошибка при удалении пациентки');
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('Ошибка при удалении пациентки');
-      });
+      applyFilters();
     });
   }
-}
-
-// Автодополнение для поиска
-function initAutoComplete() {
+  
+  // Поиск по вводу
   const searchInput = document.getElementById('search-input');
-  if (!searchInput) return;
-  
-  // Можно добавить автодополнение здесь, если нужно
-  // Для простоты оставим обычный поиск
-}
-
-// Оптимизация для сенсорных устройств
-function initTouchOptimizations() {
-  // Увеличиваем область клика для маленьких элементов
-  const smallButtons = document.querySelectorAll('.btn-group-sm .btn');
-  smallButtons.forEach(button => {
-    button.style.minWidth = '44px';
-    button.style.minHeight = '44px';
-  });
-  
-  // Предотвращаем масштабирование при фокусе на мобильных устройствах
-  const inputs = document.querySelectorAll('input, select, textarea');
-  inputs.forEach(input => {
-    input.addEventListener('focus', function() {
-      if (window.innerWidth <= 768) {
-        this.style.fontSize = '16px'; // Предотвращает масштабирование в iOS
-      }
+  if (searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(applyFilters, 300);
     });
-  });
-}
-
-// Анимация навигации
-function animateNavbar() {
-  const navbar = document.querySelector('.navbar-main');
-  if (!navbar) return;
+  }
   
-  navbar.style.opacity = '0';
-  navbar.style.transform = 'translateY(-20px)';
+  // Фильтр по статусу
+  const statusFilter = document.getElementById('status-filter');
+  if (statusFilter) {
+    statusFilter.addEventListener('change', applyFilters);
+  }
   
-  setTimeout(() => {
-    navbar.style.transition = 'all 0.5s ease-out';
-    navbar.style.opacity = '1';
-    navbar.style.transform = 'translateY(0)';
-  }, 100);
-}
-
-// Анимация строк таблицы
-function animateTableRows() {
-  const rows = document.querySelectorAll('#patients-tbody tr');
-  rows.forEach((row, index) => {
-    row.style.opacity = '0';
-    row.style.transform = 'translateX(-20px)';
-    
-    setTimeout(() => {
-      row.style.transition = 'all 0.3s ease-out';
-      row.style.opacity = '1';
-      row.style.transform = 'translateX(0)';
-    }, index * 50);
-  });
-}
-
-// Показать индикатор загрузки
-function showLoading() {
-  let loadingDiv = document.getElementById('loading');
-  if (!loadingDiv) {
-    loadingDiv = document.createElement('div');
-    loadingDiv.id = 'loading';
-    loadingDiv.className = 'loading';
-    loadingDiv.innerHTML = '<div class="spinner"></div><p>Загрузка...</p>';
-    document.querySelector('.card-body').appendChild(loadingDiv);
+  // Фильтр по дате
+  if (dateFilter) {
+    dateFilter.addEventListener('change', applyFilters);
   }
-  loadingDiv.style.display = 'block';
-}
+  
+  // Проверяем доступность функции
+  console.log('applyFilters function available:', typeof applyFilters === 'function');
+  
+  // Делаем функцию глобально доступной
+  window.applyFilters = applyFilters;
+});
 
-// Скрыть индикатор загрузки
-function hideLoading() {
-  const loadingDiv = document.getElementById('loading');
-  if (loadingDiv) {
-    loadingDiv.style.display = 'none';
-  }
-}
-
-// Сохранение состояния фильтров в localStorage
-function saveFilterState() {
-  const state = {
-    search: document.getElementById('search-input')?.value || '',
-    status: document.getElementById('status-filter')?.value || 'all',
-    dateFilter: document.getElementById('date-filter-toggle')?.checked || false,
-    date: document.getElementById('date-filter')?.value || ''
-  };
-  localStorage.setItem('patientFilters', JSON.stringify(state));
-}
-
-// Восстановление состояния фильтров из localStorage
-function restoreFilterState() {
-  const savedState = localStorage.getItem('patientFilters');
-  if (savedState) {
-    const state = JSON.parse(savedState);
-    
-    const searchInput = document.getElementById('search-input');
-    const statusFilter = document.getElementById('status-filter');
-    const dateFilterToggle = document.getElementById('date-filter-toggle');
-    const dateFilter = document.getElementById('date-filter');
-    
-    if (searchInput) searchInput.value = state.search;
-    if (statusFilter) statusFilter.value = state.status;
-    if (dateFilterToggle) dateFilterToggle.checked = state.dateFilter;
-    if (dateFilter) {
-      dateFilter.value = state.date;
-      dateFilter.disabled = !state.dateFilter;
-    }
-    
-    // Если есть сохраненное состояние, применяем фильтры
-    setTimeout(applyFilters, 100);
-  }
-}
-
-// Сохраняем состояние фильтров при изменении
-document.addEventListener('input', saveFilterState);
-document.addEventListener('change', saveFilterState);
-
-// Восстанавливаем состояние при загрузке
-window.addEventListener('load', restoreFilterState);
+// Делаем функцию доступной глобально (на всякий случай)
+window.applyFilters = applyFilters;
+window.updatePatientsTable = updatePatientsTable;
