@@ -1,0 +1,440 @@
+/* Используем предоставленный вами CSS без изменений */
+:root {
+  --main-color: #54c654;
+  --main-color-dark: #3a8a3a;
+  --main-color-light: #e8f5e9;
+  --main-color-border: #4ab84a;
+  --secondary-color: #6c757d;
+  --info-color: #17a2b8;
+  --primary-color: #007bff;
+  --danger-color: #dc3545;
+  --success-color: #28a745;
+  --warning-color: #ffc107;
+  --light-color: #f8f9fa;
+  --dark-color: #343a40;
+  --text-color: #333;
+  --text-light: #fff;
+  --bg-light: #f8f9fa;
+  --black-color: black;
+  --gray-color: gray;
+}
+
+body {
+  font-family: 'Jost', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-light);
+  color: var(--text-color);
+  padding-top: 15px;
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+/* Touch-friendly элементы */
+.touch-friendly {
+  min-height: 44px; /* Минимальный размер для касания */
+  padding: 10px 16px;
+}
+
+.touch-friendly.btn {
+  padding: 12px 20px;
+}
+
+/* Улучшенные поля ввода для мобильных устройств */
+.form-control.touch-friendly,
+.form-select.touch-friendly {
+  font-size: 16px; /* Предотвращает масштабирование в iOS */
+  padding: 12px;
+}
+
+/* Анимация наведения для десктопов */
+@media (hover: hover) and (pointer: fine) {
+  .touch-friendly:hover {
+    opacity: 0.9;
+  }
+  
+  .navbar-links .nav-link:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Стили для таймеров */
+.timer-danger {
+  background-color: var(--danger-color) !important;
+  color: white !important;
+  animation: pulse 1s infinite;
+}
+
+.timer-warning {
+  background-color: var(--warning-color) !important;
+  color: black !important;
+}
+
+.timer-normal {
+  background-color: var(--success-color) !important;
+  color: white !important;
+}
+
+.timer-completed {
+  background-color: var(--secondary-color) !important;
+  color: white !important;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Статусные бейджи */
+.status-badge {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+}
+
+/* Навигация */
+.navbar-main {
+  background: linear-gradient(135deg, var(--main-color) 0%, var(--main-color-dark) 100%) !important;
+  box-shadow: 0 2px 20px rgba(84, 198, 84, 0.3);
+  padding: 0.6rem 1rem;
+  border-bottom: 3px solid var(--main-color-dark);
+}
+
+.navbar-logo {
+  height: 32px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.navbar-brand-text {
+  font-weight: 600;
+  color: var(--text-light);
+  font-size: 1rem;
+}
+
+.navbar-links .nav-link {
+  color: var(--text-light);
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-weight: 500;
+  margin: 0 2px;
+  font-size: 0.95rem;
+}
+
+.navbar-brand:hover .navbar-logo {
+  transform: rotate(-8deg) scale(1.15);
+  filter: brightness(0) invert(1) drop-shadow(0 0 6px rgba(255,255,255,0.8));
+}
+
+.navbar-brand-text {
+  font-weight: 700;
+  color: white;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+
+.navbar-brand:hover .navbar-brand-text {
+  text-shadow: 0 0 12px rgba(255,255,255,0.8);
+  transform: translateX(2px);
+}
+
+.navbar-links .nav-link {
+  color: white !important;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  margin: 0 3px;
+  font-size: 0.95rem;
+  background: rgba(255,255,255,0.1);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border: 2px solid transparent;
+}
+
+.navbar-links .nav-link:hover {
+  background: rgba(255,255,255,0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.navbar-links .nav-link.active {
+  background: rgba(255,255,255,0.25);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-color: rgba(255,255,255,0.4);
+}
+
+.navbar-links .nav-link i {
+  margin-right: 6px;
+  font-size: 1.1rem;
+}
+
+.navbar-toggler {
+  border: 2px solid rgba(255,255,255,0.3);
+  padding: 0.4rem 0.6rem;
+}
+
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.navbar-main {
+  animation: slideDown 0.6s ease-out;
+}
+
+/* Карточки */
+.card {
+  border: 2px solid rgba(0,0,0,0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  background-color: white;
+}
+
+.card-header {
+  padding: 1.2rem;
+  border-bottom: 2px solid rgba(0,0,0,0.1) !important;
+  color: white;
+  background-color: var(--main-color);
+}
+
+.card-body {
+  padding: 1.2rem;
+}
+
+.card-title {
+  margin-bottom: 0.8rem;
+  color: var(--text-light);
+  font-size: 1.3rem;
+}
+
+/* Кнопки */
+.btn {
+  font-weight: 500;
+  border-radius: 8px !important;
+  padding: 0.7rem 1.6rem;
+  font-size: 1rem;
+  margin: 0.3rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent !important;
+}
+
+.btn i {
+  margin-right: 8px;
+}
+
+.btn-main {
+  background-color: var(--main-color);
+  color: white;
+  border-color: var(--main-color-dark) !important;
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+/* Формы */
+.form-control, .form-select {
+  border-radius: 8px !important;
+  padding: 0.8rem;
+  border: 2px solid #e0e0e0 !important;
+  font-size: 1rem;
+  min-height: 48px;
+}
+
+.form-label {
+  font-weight: 500;
+  margin-bottom: 0.6rem;
+  font-size: 1rem;
+}
+
+/* Таблицы */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.table th,
+.table td {
+  padding: 0.8rem;
+  border-bottom: 1px solid #eee;
+}
+
+.table th {
+  background: var(--light-color);
+  font-weight: 600;
+}
+
+/* Чекбоксы */
+.form-check-input {
+  width: 20px;
+  height: 20px;
+  margin-right: 0.6rem;
+}
+
+.form-check-label {
+  font-size: 1rem;
+}
+
+/* Адаптивность */
+@media (max-width: 992px) {
+  .container {
+    padding: 0 10px;
+  }
+  
+  .card-body {
+    padding: 1rem;
+  }
+  
+  .btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+  }
+  
+  .table {
+    font-size: 0.9rem;
+  }
+  
+  .table th,
+  .table td {
+    padding: 0.6rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .navbar-collapse {
+    background: linear-gradient(135deg, var(--main-color) 0%, var(--main-color-dark) 100%);
+    padding: 1rem;
+    border-radius: 12px;
+    margin-top: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+  
+  .navbar-links .nav-link {
+    margin: 0.4rem 0;
+    text-align: center;
+    justify-content: center;
+  }
+  
+  .navbar-brand-text {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .col-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  
+  .navbar-collapse {
+    background-color: var(--main-color);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+  }
+  
+  .navbar-links .nav-link {
+    margin: 0.3rem 0;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .table {
+    min-width: 600px;
+  }
+  
+  .btn-group {
+    flex-wrap: wrap;
+  }
+  
+  .btn-group .btn {
+    margin: 2px;
+    flex: 1;
+  }
+}
+
+/* Специальные классы */
+.form-container {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+.text-muted {
+  color: var(--secondary-color) !important;
+  font-size: 0.95rem;
+}
+
+.monitor-checkbox {
+  transform: scale(1.2);
+  margin-right: 10px;
+}
+
+.mt-3 {
+  margin-top: 1.2rem !important;
+}
+
+.mb-3 {
+  margin-bottom: 1.2rem !important;
+}
+
+.btn, .card, .form-control {
+  transition: all 0.2s ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+/* Загрузка */
+.loading {
+  display: none;
+  text-align: center;
+  padding: 20px;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--main-color);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
