@@ -1,0 +1,66 @@
+/* /public/css/components/navbar.css */
+/* Минималистичная навигация */
+.navbar-main {
+    background: white !important;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    padding: 0.8rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.navbar-brand {
+    font-weight: 600;
+    color: var(--bs-primary) !important;
+    font-size: 1.2rem;
+}
+
+.navbar-brand i {
+    font-size: 1.4rem;
+}
+
+.navbar-nav .nav-link {
+    color: #495057 !important;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    margin: 0 0.2rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.navbar-nav .nav-link:hover {
+    color: var(--bs-primary) !important;
+    background-color: rgba(84, 198, 84, 0.08);
+}
+
+.navbar-nav .nav-link.active {
+    color: var(--bs-primary) !important;
+    background-color: rgba(84, 198, 84, 0.12);
+}
+
+.navbar-toggler {
+    border: none;
+    padding: 0.4rem;
+}
+
+.navbar-toggler:focus {
+    box-shadow: none;
+}
+
+/* Адаптивность для планшетов */
+@media (max-width: 992px) {
+    .navbar-nav {
+        padding: 1rem 0;
+    }
+    
+    .navbar-nav .nav-link {
+        margin: 0.2rem 0;
+        padding: 0.75rem 1rem;
+    }
+    
+    .navbar-collapse {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+    }
+}

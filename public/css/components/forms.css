@@ -1,0 +1,166 @@
+/* /public/css/components/forms.css */
+/* Стили для формы редактирования/создания пациента */
+/* Эти стили заменят inline-стили из edit.erb и new.erb */
+
+.col-span-2 {
+    grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+    .col-span-2 {
+        grid-column: span 1;
+    }
+    
+    .form-actions .action-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .form-actions .action-buttons .btn {
+        width: 100%;
+    }
+}
+/* /public/css/components/forms.css */
+/* Минималистичные формы */
+
+.form-modern {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.form-section-modern {
+    background: white;
+    padding: 1.75rem;
+    border-radius: 14px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.form-section-title-modern {
+    color: var(--bs-primary);
+    font-weight: 600;
+    font-size: 1.15rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(84, 198, 84, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-grid-modern {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Улучшенные поля ввода */
+.input-modern {
+    border-radius: 10px !important;
+    border: 1.5px solid #e0e0e0 !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.95rem !important;
+    transition: all 0.2s ease !important;
+    background: #fcfcfc;
+}
+
+.input-modern:focus {
+    border-color: var(--bs-primary) !important;
+    box-shadow: 0 0 0 4px rgba(84, 198, 84, 0.1) !important;
+    background: white;
+    outline: none;
+}
+
+.input-modern:disabled {
+    background-color: #f5f5f5;
+    opacity: 0.7;
+}
+
+/* Лейблы */
+.form-label-modern {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Кнопки форм */
+.form-actions-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.action-buttons-modern {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Адаптивность форм для планшетов */
+@media (max-width: 992px) {
+    .form-grid-modern {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+    }
+    
+    .form-section-modern {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .form-grid-modern {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .form-section-modern {
+        padding: 1.25rem;
+        border-radius: 12px;
+    }
+    
+    .form-actions-modern {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .action-buttons-modern {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .action-buttons-modern .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Специальные поля */
+textarea.input-modern {
+    min-height: 120px;
+    resize: vertical;
+}
+
+select.input-modern {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2354c654' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+}
+
+/* Чекбоксы и радиокнопки */
+.form-check-input:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.form-check-input:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.25rem rgba(84, 198, 84, 0.25);
+}

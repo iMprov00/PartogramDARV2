@@ -1,49 +1,63 @@
-<div class="card">
-  <div class="card-header bg-main text-white">
-    <h5 class="card-title mb-0">
+<div class="card card-modern fade-in-card">
+  <div class="card-header-modern">
+    <h5 class="card-title">
       <i class="bi bi-people me-2"></i>Список пациенток
     </h5>
   </div>
-  <div class="card-body">
-    <!-- Фильтры -->
-    <div class="row mb-4">
-      <div class="col-md-4">
-        <input type="text" 
-               class="form-control search-input touch-friendly" 
-               id="search-input" 
-               placeholder="Поиск по ФИО..."
-               autocomplete="off">
+  <div class="card-body-modern">
+    <!-- Карточка с фильтрами -->
+    <div class="filter-card-modern">
+      <div class="filter-header">
+        <h6 class="filter-title">
+          <i class="bi bi-funnel me-2"></i>Фильтры пациентов
+        </h6>
       </div>
-      <div class="col-md-3">
-        <select class="form-select touch-friendly" id="status-filter">
-          <option value="all">Все статусы</option>
-          <% Patient::STATUSES.each_value do |status| %>
-            <option value="<%= status %>"><%= status %></option>
-          <% end %>
-        </select>
-      </div>
-      <div class="col-md-3">
-        <div class="form-check touch-friendly">
-          <input class="form-check-input" type="checkbox" id="date-filter-toggle">
-          <label class="form-check-label" for="date-filter-toggle">
-            Фильтр по дате
-          </label>
+      <div class="filter-body">
+        <div class="filter-item">
+          <label for="search-input" class="form-label-modern">Поиск по ФИО</label>
+          <input type="text" 
+                 class="form-control input-modern" 
+                 id="search-input" 
+                 placeholder="Введите ФИО...">
         </div>
-        <input type="date" 
-               class="form-control mt-2 touch-friendly" 
-               id="date-filter" 
-               disabled>
-      </div>
-      <div class="col-md-2">
-        <button class="btn btn-main w-100 touch-friendly" onclick="applyFilters()">
-          <i class="bi bi-funnel"></i> Применить
-        </button>
+        
+        <div class="filter-item">
+          <label for="status-filter" class="form-label-modern">Статус</label>
+          <select class="form-select input-modern" id="status-filter">
+            <option value="all">Все статусы</option>
+            <% Patient::STATUSES.each_value do |status| %>
+              <option value="<%= status %>"><%= status %></option>
+            <% end %>
+          </select>
+        </div>
+        
+        <div class="filter-item">
+          <label class="form-label-modern">Фильтр по дате</label>
+          <div class="date-filter-wrapper">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="date-filter-toggle">
+              <label class="form-check-label" for="date-filter-toggle">
+                Включить
+              </label>
+            </div>
+            <input type="date" 
+                   class="form-control input-modern" 
+                   id="date-filter" 
+                   disabled>
+          </div>
+        </div>
+        
+        <div class="filter-item d-flex align-items-end">
+          <button class="btn btn-primary w-100" id="apply-filters-btn">
+            <i class="bi bi-funnel me-2"></i>Применить
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Таблица пациентов -->
     <div class="table-responsive">
-      <table class="table table-hover" id="patients-table">
+      <table class="table table-modern" id="patients-table">
         <thead>
           <tr>
             <th>#</th>
@@ -61,33 +75,43 @@
               <td><strong><%= patient.full_name %></strong></td>
               <td><%= patient.admission_date.strftime('%d.%m.%Y') %></td>
               <td>
-                <span class="badge bg-<%= patient.status_color %> status-badge">
+                <span class="badge status-badge-modern bg-<%= patient.status_color %>">
                   <%= patient.status %>
                 </span>
               </td>
               <td>
-                <span class="badge <%= patient.timer_class %> timer-badge">
+                <span class="badge timer-badge-modern <%= patient.timer_class %>">
                   <%= patient.timer_text %>
                 </span>
               </td>
               <td>
-                <div class="btn-group btn-group-sm" role="group">
-                  <a href="/patients/<%= patient.id %>/partogram" 
-                     class="btn <%= patient.partogram_button_class %> touch-friendly">
-                    <i class="bi bi-graph-up"></i>
-                    <span class="d-none d-md-inline"><%= patient.partogram_button_text %></span>
-                  </a>
+                <div class="table-actions-modern">
+                  <% if patient.status == 'роды не начались' %>
+                    <a href="/patients/<%= patient.id %>/partogram" 
+                       class="btn btn-outline-primary"
+                       title="Добавить партограмму">
+                      <i class="bi bi-plus-circle"></i>
+                    </a>
+                  <% else %>
+                    <a href="/patients/<%= patient.id %>/partogram" 
+                       class="btn btn-primary"
+                       title="Перейти к партограмме">
+                      <i class="bi bi-graph-up"></i>
+                    </a>
+                  <% end %>
+                  
                   <a href="/patients/<%= patient.id %>/edit" 
-                     class="btn btn-outline-secondary touch-friendly">
+                     class="btn btn-outline-secondary"
+                     title="Изменить">
                     <i class="bi bi-pencil"></i>
-                    <span class="d-none d-md-inline">Изменить</span>
                   </a>
+                  
                   <button type="button" 
-                          class="btn btn-outline-danger delete-btn touch-friendly"
+                          class="btn btn-outline-danger delete-btn"
                           data-patient-id="<%= patient.id %>"
-                          data-patient-name="<%= patient.full_name %>">
+                          data-patient-name="<%= patient.full_name %>"
+                          title="Удалить">
                     <i class="bi bi-trash"></i>
-                    <span class="d-none d-md-inline">Удалить</span>
                   </button>
                 </div>
               </td>
@@ -97,18 +121,18 @@
       </table>
     </div>
     
-    <div class="d-flex justify-content-between align-items-center mt-3">
+    <div class="d-flex justify-content-between align-items-center mt-4">
       <div class="text-muted" id="patients-count">
         Всего пациенток: <%= @patients.count %>
       </div>
-      <a href="/patients/new" class="btn btn-main touch-friendly">
+      <a href="/patients/new" class="btn btn-primary">
         <i class="bi bi-plus-circle me-1"></i> Добавить пациентку
       </a>
     </div>
   </div>
 </div>
 
-<!-- Модальное окно подтверждения удаления -->
+<!-- Модальное окно подтверждения удаления (оставить как есть, Bootstrap сам стилизует) -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -121,8 +145,8 @@
         <p class="text-danger">Это действие нельзя отменить.</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary touch-friendly" data-bs-dismiss="modal">Отмена</button>
-        <button type="button" class="btn btn-danger touch-friendly" id="confirm-delete">Удалить</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-danger" id="confirm-delete">Удалить</button>
       </div>
     </div>
   </div>

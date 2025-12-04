@@ -1,0 +1,161 @@
+/* /public/css/components/cards.css */
+/* Минималистичные карточки */
+.card-modern {
+    border: none;
+    border-radius: 16px;
+    background: white;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-bottom: 1.5rem;
+}
+
+.card-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.card-header-modern {
+    background: linear-gradient(135deg, var(--bs-primary) 0%, #3a8a3a 100%);
+    border-bottom: none;
+    padding: 1.25rem 1.5rem;
+}
+
+.card-header-modern .card-title {
+    color: white;
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-body-modern {
+    padding: 1.5rem;
+}
+
+/* Карточка фильтров */
+.filter-card-modern {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    margin-bottom: 1.5rem;
+}
+
+.filter-card-modern .filter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.filter-card-modern .filter-title {
+    color: var(--bs-primary);
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-card-modern .filter-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    align-items: end;
+}
+
+.filter-card-modern .filter-item label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.filter-card-modern .date-filter-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #f8f9fa;
+    padding: 0.75rem;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+}
+
+.filter-card-modern .date-filter-wrapper .form-check {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.filter-card-modern .date-filter-wrapper input[type="date"] {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 0.375rem 0;
+    min-width: 130px;
+    color: #495057;
+}
+
+/* Адаптивность для планшетов */
+@media (max-width: 992px) {
+    .filter-card-modern .filter-body {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .card-modern {
+        border-radius: 12px;
+    }
+    
+    .card-header-modern {
+        padding: 1rem;
+    }
+    
+    .card-body-modern {
+        padding: 1.25rem;
+    }
+    
+    .filter-card-modern {
+        padding: 1.25rem;
+    }
+    
+    .filter-card-modern .filter-body {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .filter-card-modern .date-filter-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .filter-card-modern .date-filter-wrapper input[type="date"] {
+        width: 100%;
+    }
+}
+
+/* Анимация появления карточек */
+.fade-in-card {
+    animation: fadeInCard 0.4s ease-out;
+}
+
+@keyframes fadeInCard {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

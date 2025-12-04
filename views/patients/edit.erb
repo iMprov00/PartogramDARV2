@@ -1,39 +1,44 @@
-<div class="card">
-  <div class="card-header bg-main text-white">
-    <h5 class="card-title mb-0">
+<div class="card card-modern fade-in-card">
+  <div class="card-header-modern text-white">
+    <h5 class="card-title">
       <i class="bi bi-pencil me-2"></i>Редактирование пациентки
     </h5>
   </div>
-  <div class="card-body">
-    <form action="/patients/<%= @patient.id %>" method="post" id="patient-form">
+  <div class="card-body-modern">
+    <form action="/patients/<%= @patient.id %>" method="post" id="patient-form" class="form-modern">
       <input type="hidden" name="_method" value="put">
       
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label for="full_name" class="form-label">ФИО <span class="text-danger">*</span></label>
-          <input type="text" 
-                 class="form-control touch-friendly" 
-                 id="full_name" 
-                 name="patient[full_name]" 
-                 value="<%= @patient.full_name %>"
-                 required>
-        </div>
+      <!-- Основная информация -->
+      <div class="form-section-modern">
+        <h6 class="form-section-title-modern">
+          <i class="bi bi-person-vcard"></i> Основная информация
+        </h6>
+        <div class="form-grid-modern">
+          <div>
+            <label for="full_name" class="form-label-modern">ФИО <span class="text-danger">*</span></label>
+            <input type="text" 
+                   class="form-control input-modern" 
+                   id="full_name" 
+                   name="patient[full_name]" 
+                   value="<%= @patient.full_name %>"
+                   required>
+          </div>
+          
+          <div>
+            <label for="age" class="form-label-modern">Возраст</label>
+            <input type="number" 
+                   class="form-control input-modern" 
+                   id="age" 
+                   name="patient[age]" 
+                   value="<%= @patient.age %>"
+                   min="14"
+                   max="60">
+          </div>
         
-        <div class="col-md-3 mb-3">
-          <label for="age" class="form-label">Возраст</label>
+        <div>
+          <label for="gestational_age" class="form-label-modern">Срок бер.(нед.)</label>
           <input type="number" 
-                 class="form-control touch-friendly" 
-                 id="age" 
-                 name="patient[age]" 
-                 value="<%= @patient.age %>"
-                 min="14"
-                 max="60">
-        </div>
-        
-        <div class="col-md-3 mb-3">
-          <label for="gestational_age" class="form-label">Срок беременности (нед.)</label>
-          <input type="number" 
-                 class="form-control touch-friendly" 
+                 class="form-control input-modern" 
                  id="gestational_age" 
                  name="patient[gestational_age]" 
                  value="<%= @patient.gestational_age %>"
@@ -41,65 +46,65 @@
                  max="45">
         </div>
         
-        <div class="col-md-4 mb-3">
-          <label for="admission_date" class="form-label">Дата поступления <span class="text-danger">*</span></label>
+        <div>
+          <label for="admission_date" class="form-label-modern">Дата поступления <span class="text-danger">*</span></label>
           <input type="date" 
-                 class="form-control touch-friendly" 
+                 class="form-control input-modern" 
                  id="admission_date" 
                  name="patient[admission_date]" 
                  value="<%= @patient.admission_date %>"
                  required>
         </div>
         
-        <div class="col-md-4 mb-3">
-          <label for="history_number" class="form-label">№ истории болезни</label>
+        <div>
+          <label for="history_number" class="form-label-modern">№ истории болезни</label>
           <input type="text" 
-                 class="form-control touch-friendly" 
+                 class="form-control input-modern" 
                  id="history_number" 
                  name="patient[history_number]" 
                  value="<%= @patient.history_number %>">
         </div>
         
-        <div class="col-md-4 mb-3">
-          <label for="parity" class="form-label">Партитет</label>
+        <div>
+          <label for="parity" class="form-label-modern">Партитет</label>
           <input type="number" 
-                 class="form-control touch-friendly" 
+                 class="form-control input-modern"  
                  id="parity" 
                  name="patient[parity]" 
                  value="<%= @patient.parity %>"
                  min="0">
         </div>
         
-        <div class="col-md-4 mb-3">
-          <label for="labor_start" class="form-label">Начало родов</label>
+        <div>
+          <label for="labor_start" class="form-label-modern">Начало родов</label>
           <input type="datetime-local" 
-                 class="form-control touch-friendly" 
+                 class="form-control input-modern" 
                  id="labor_start" 
                  name="patient[labor_start]"
                  value="<%= @patient.labor_start&.strftime('%Y-%m-%dT%H:%M') %>">
         </div>
         
-        <div class="col-md-4 mb-3">
-          <label for="active_phase_start" class="form-label">Начало активной фазы</label>
+        <div>
+          <label for="active_phase_start" class="form-label-modern">Начало активной фазы</label>
           <input type="datetime-local" 
-                 class="form-control touch-friendly" 
+                 class="form-control input-modern" 
                  id="active_phase_start" 
                  name="patient[active_phase_start]"
                  value="<%= @patient.active_phase_start&.strftime('%Y-%m-%dT%H:%M') %>">
         </div>
         
-        <div class="col-md-4 mb-3">
-          <label for="membrane_rupture" class="form-label">Разрыв плодных оболочек</label>
+        <div>
+          <label for="membrane_rupture" class="form-label-modern">Разрыв плодных оболочек</label>
           <input type="datetime-local" 
-                 class="form-control touch-friendly" 
+                 class="form-control input-modern" 
                  id="membrane_rupture" 
                  name="patient[membrane_rupture]"
                  value="<%= @patient.membrane_rupture&.strftime('%Y-%m-%dT%H:%M') %>">
         </div>
         
-        <div class="col-md-6 mb-3">
-          <label for="status" class="form-label">Статус <span class="text-danger">*</span></label>
-          <select class="form-select touch-friendly" id="status" name="patient[status]" required>
+        <div>
+          <label for="status" class="form-label-modern">Статус <span class="text-danger">*</span></label>
+          <select class="form-control input-modern"  id="status" name="patient[status]" required>
             <% Patient::STATUSES.each_value do |status| %>
               <option value="<%= status %>" <%= 'selected' if @patient.status == status %>>
                 <%= status %>
@@ -108,7 +113,7 @@
           </select>
         </div>
         
-        <div class="col-12 mb-3">
+        <div>
           <label for="risk_factors" class="form-label">Значимые факторы риска</label>
           <textarea class="form-control touch-friendly" 
                     id="risk_factors" 
@@ -116,7 +121,7 @@
                     rows="3"><%= @patient.risk_factors %></textarea>
         </div>
         
-        <div class="col-12 mb-3">
+        <div>
           <label for="notes" class="form-label">Примечания</label>
           <textarea class="form-control touch-friendly" 
                     id="notes" 
@@ -125,14 +130,23 @@
         </div>
       </div>
       
-      <div class="d-flex justify-content-between mt-4">
-        <a href="/patients" class="btn btn-secondary touch-friendly">
-          <i class="bi bi-arrow-left me-1"></i> Назад
+     <div class="form-actions-modern">
+        <a href="/patients" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i>
+          <span>Назад к списку</span>
         </a>
-        <div>
-          <button type="submit" class="btn btn-main touch-friendly">
-            <i class="bi bi-check-circle me-1"></i> Сохранить
+        
+        <div class="action-buttons-modern">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle me-1"></i>
+            <span>Сохранить изменения</span>
           </button>
+          
+          <a href="/patients/<%= @patient.id %>/partogram" 
+             class="btn btn-outline-primary">
+            <i class="bi bi-graph-up me-1"></i>
+            <span>Перейти к партограмме</span>
+          </a>
         </div>
       </div>
     </form>
