@@ -159,3 +159,41 @@
         transform: translateY(0);
     }
 }
+
+
+
+/* Компактный вариант фильтра даты */
+.date-filter-compact .toggle-and-date {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.date-filter-compact .toggle-switch {
+  flex: 0 0 auto;
+}
+
+.date-filter-compact .date-picker {
+  flex: 1;
+}
+
+.date-filter-compact .compact-date {
+  height: 46px;
+}
+
+@media (max-width: 768px) {
+  .date-filter-compact .toggle-and-date {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .date-filter-compact .toggle-switch {
+    width: 100%;
+  }
+  
+  .date-filter-compact .date-picker {
+    width: 100%;
+  }
+}
+
+

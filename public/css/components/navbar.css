@@ -1,66 +1,186 @@
-/* /public/css/components/navbar.css */
-/* Минималистичная навигация */
+/* /public/css/components/navbar.css - Обновленная навигация */
 .navbar-main {
-    background: white !important;
-    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    background: var(--gradient-primary) !important;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
     padding: 0.8rem 0;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-bottom: 2px solid var(--bs-primary-dark);
 }
 
 .navbar-brand {
     font-weight: 600;
-    color: var(--bs-primary) !important;
+    color: white !important;
     font-size: 1.2rem;
 }
 
 .navbar-brand i {
     font-size: 1.4rem;
+    color: white;
 }
 
 .navbar-nav .nav-link {
-    color: #495057 !important;
+    color: rgba(255, 255, 255, 0.9) !important;
     font-weight: 500;
     padding: 0.5rem 1rem;
     margin: 0 0.2rem;
     border-radius: 8px;
     transition: all 0.2s ease;
+    border: 1px solid transparent;
 }
 
 .navbar-nav .nav-link:hover {
-    color: var(--bs-primary) !important;
-    background-color: rgba(84, 198, 84, 0.08);
+    color: white !important;
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .navbar-nav .nav-link.active {
-    color: var(--bs-primary) !important;
-    background-color: rgba(84, 198, 84, 0.12);
+    color: white !important;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .navbar-toggler {
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.3);
     padding: 0.4rem;
 }
 
-.navbar-toggler:focus {
-    box-shadow: none;
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
 /* Адаптивность для планшетов */
 @media (max-width: 992px) {
     .navbar-nav {
         padding: 1rem 0;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        margin-top: 0.5rem;
     }
     
     .navbar-nav .nav-link {
-        margin: 0.2rem 0;
-        padding: 0.75rem 1rem;
+        margin: 0.3rem 0.5rem;
+        text-align: center;
+    }
+}
+
+/* /public/css/components/navbar.css - с логотипом */
+.navbar-main {
+    background: var(--gradient-primary) !important;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+    padding: 0.6rem 0;
+    border-bottom: 2px solid var(--bs-primary-dark);
+}
+
+/* Стили для логотипа */
+.navbar-logo {
+    height: 32px; /* Или нужный вам размер */
+    width: auto;
+    max-height: 40px; /* Максимальная высота */
+    object-fit: contain;
+    transition: all 0.3s ease;
+}
+
+.navbar-brand {
+    font-weight: 600;
+    color: white !important;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar-brand:hover .navbar-logo {
+    transform: scale(1.05);
+    filter: brightness(1.2);
+}
+
+.navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    margin: 0 0.2rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.navbar-nav .nav-link:hover {
+    color: white !important;
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.navbar-nav .nav-link.active {
+    color: white !important;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.navbar-toggler {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0.4rem;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Адаптивность для планшетов и мобильных */
+@media (max-width: 992px) {
+    .navbar-logo {
+        height: 28px; /* Чуть меньше на планшетах */
     }
     
-    .navbar-collapse {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-        margin-top: 0.5rem;
-        padding: 0.5rem;
+    .navbar-brand {
+        font-size: 1rem;
     }
+    
+    .navbar-nav {
+        padding: 1rem 0;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        margin-top: 0.5rem;
+    }
+    
+    .navbar-nav .nav-link {
+        margin: 0.3rem 0.5rem;
+        text-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar-logo {
+        height: 26px; /* Ещё меньше на мобильных */
+    }
+    
+    .navbar-brand span {
+        font-size: 0.95rem;
+    }
+    
+    /* Можно скрыть текст на очень маленьких экранах */
+    @media (max-width: 400px) {
+        .navbar-brand span {
+            display: none;
+        }
+        
+        .navbar-logo {
+            height: 30px; /* Увеличиваем лого, если скрыли текст */
+        }
+    }
+}
+
+/* Анимация для навигации */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.navbar-main {
+    animation: slideDown 0.4s ease-out;
 }

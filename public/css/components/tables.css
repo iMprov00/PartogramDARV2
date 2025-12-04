@@ -177,3 +177,34 @@
     color: #dee2e6;
     margin-bottom: 1rem;
 }
+
+* Обновите стили кнопок таблицы */
+.table-actions-modern .btn-primary {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary-border);
+}
+
+.table-actions-modern .btn-primary:hover {
+    background-color: var(--bs-primary-dark);
+    border-color: var(--bs-primary-dark);
+}
+
+.table-actions-modern .btn-outline-primary {
+    color: var(--bs-primary);
+    border-color: var(--bs-primary-border);
+}
+
+.table-actions-modern .btn-outline-primary:hover {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.table-actions-modern .btn-outline-danger {
+    color: var(--bs-danger);
+    border-color: #dc3545;
+}
+
+.table-actions-modern .btn-outline-danger:hover {
+    background-color: var(--bs-danger);
+    border-color: var(--bs-danger);
+}

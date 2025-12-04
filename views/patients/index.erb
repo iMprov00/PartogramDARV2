@@ -5,55 +5,61 @@
     </h5>
   </div>
   <div class="card-body-modern">
-    <!-- Карточка с фильтрами -->
-    <div class="filter-card-modern">
-      <div class="filter-header">
-        <h6 class="filter-title">
-          <i class="bi bi-funnel me-2"></i>Фильтры пациентов
-        </h6>
+  <!-- Карточка с фильтрами -->
+  <div class="filter-card-modern">
+    <div class="filter-header">
+      <h6 class="filter-title">
+        <i class="bi bi-funnel me-2"></i>Фильтры пациентов
+      </h6>
+    </div>
+    <div class="filter-body">
+      <div class="filter-item">
+        <label for="search-input" class="form-label-modern">Поиск по ФИО</label>
+        <input type="text" 
+               class="form-control input-modern" 
+               id="search-input" 
+               placeholder="Введите ФИО...">
       </div>
-      <div class="filter-body">
-        <div class="filter-item">
-          <label for="search-input" class="form-label-modern">Поиск по ФИО</label>
-          <input type="text" 
-                 class="form-control input-modern" 
-                 id="search-input" 
-                 placeholder="Введите ФИО...">
+      
+      <div class="filter-item">
+        <label for="status-filter" class="form-label-modern">Статус</label>
+        <select class="form-select input-modern" id="status-filter">
+          <option value="all">Все статусы</option>
+          <% Patient::STATUSES.each_value do |status| %>
+            <option value="<%= status %>"><%= status %></option>
+          <% end %>
+        </select>
+      </div>
+      
+<div class="filter-item">
+  <label class="form-label-modern">Фильтр по дате</label>
+  <div class="date-filter-compact">
+    <div class="toggle-and-date">
+      <div class="toggle-switch">
+        <div class="form-check form-switch date-switch">
+          <input class="form-check-input" type="checkbox" role="switch" id="date-filter-toggle">
+          <label class="form-check-label" for="date-filter-toggle">
+       
+          </label>
         </div>
-        
-        <div class="filter-item">
-          <label for="status-filter" class="form-label-modern">Статус</label>
-          <select class="form-select input-modern" id="status-filter">
-            <option value="all">Все статусы</option>
-            <% Patient::STATUSES.each_value do |status| %>
-              <option value="<%= status %>"><%= status %></option>
-            <% end %>
-          </select>
-        </div>
-        
-        <div class="filter-item">
-          <label class="form-label-modern">Фильтр по дате</label>
-          <div class="date-filter-wrapper">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="date-filter-toggle">
-              <label class="form-check-label" for="date-filter-toggle">
-                Включить
-              </label>
-            </div>
-            <input type="date" 
-                   class="form-control input-modern" 
-                   id="date-filter" 
-                   disabled>
-          </div>
-        </div>
-        
-        <div class="filter-item d-flex align-items-end">
-          <button class="btn btn-primary w-100" id="apply-filters-btn">
-            <i class="bi bi-funnel me-2"></i>Применить
-          </button>
-        </div>
+      </div>
+      <div class="date-picker">
+        <input type="date" 
+               class="form-control input-modern" 
+               id="date-filter" 
+               disabled>
       </div>
     </div>
+  </div>
+</div>
+      
+      <div class="filter-item d-flex align-items-end">
+        <button class="btn btn-primary w-100" id="apply-filters-btn">
+          <i class="bi bi-funnel me-2"></i>Применить фильтры
+        </button>
+      </div>
+    </div>
+  </div>
 
     <!-- Таблица пациентов -->
     <div class="table-responsive">

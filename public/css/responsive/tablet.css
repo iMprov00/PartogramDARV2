@@ -1,0 +1,331 @@
+/* /public/css/responsive/tablet.css */
+/* Специальные стили для планшетов (768px - 992px) */
+
+@media (min-width: 768px) and (max-width: 992px) {
+  /* Общие настройки для планшетов */
+  body {
+    font-size: 0.95rem;
+  }
+  
+  .container {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  
+  /* Навигация для планшетов */
+  .navbar-main {
+    padding: 0.7rem 0;
+  }
+  
+  .navbar-nav .nav-link {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  
+  /* Карточки для планшетов */
+  .card-modern {
+    margin-bottom: 1.25rem;
+  }
+  
+  .card-header-modern {
+    padding: 1.1rem 1.25rem;
+  }
+  
+  .card-body-modern {
+    padding: 1.25rem;
+  }
+  
+  .card-title {
+    font-size: 1.2rem;
+  }
+  
+  /* Фильтры для планшетов */
+  .filter-card-modern {
+    padding: 1.25rem;
+  }
+  
+  .filter-card-modern .filter-body {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .filter-item:last-child {
+    grid-column: span 2;
+  }
+  
+  /* Формы для планшетов */
+  .form-grid-modern {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+  
+  .form-section-modern {
+    padding: 1.5rem;
+  }
+  
+  .form-section-title-modern {
+    font-size: 1.1rem;
+  }
+  
+  .input-modern {
+    padding: 0.7rem 0.9rem !important;
+    font-size: 0.95rem !important;
+  }
+  
+  /* Таблицы для планшетов */
+  .table-modern {
+    font-size: 0.9rem;
+  }
+  
+  .table-modern thead th {
+    padding: 0.9rem 1rem;
+    font-size: 0.85rem;
+  }
+  
+  .table-modern tbody td {
+    padding: 1rem;
+  }
+  
+  .table-actions-modern {
+    gap: 0.4rem;
+  }
+  
+  .table-actions-modern .btn {
+    width: 38px;
+    height: 38px;
+  }
+  
+  .status-badge-modern,
+  .timer-badge-modern {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  /* Кнопки для планшетов */
+  .btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+    min-height: 42px;
+  }
+  
+  .btn i {
+    font-size: 0.95rem;
+  }
+  
+  /* Футер для планшетов */
+  footer {
+    padding: 1.5rem 0;
+  }
+  
+  /* Утилитарные классы */
+  .mt-4 {
+    margin-top: 1.25rem !important;
+  }
+  
+  .mb-4 {
+    margin-bottom: 1.25rem !important;
+  }
+  
+  /* Специальные стили для полей даты/времени */
+  input[type="date"].input-modern,
+  input[type="datetime-local"].input-modern {
+    font-size: 0.9rem;
+  }
+  
+  /* Компактные контейнеры действий */
+  .form-actions-modern {
+    padding-top: 1.25rem;
+    margin-top: 1.25rem;
+  }
+  
+  .action-buttons-modern {
+    gap: 0.6rem;
+  }
+  
+  /* Модальные окна для планшетов */
+  .modal-dialog {
+    max-width: 90%;
+    margin: 1.75rem auto;
+  }
+  
+  .modal-content {
+    padding: 1rem;
+  }
+  
+  /* Улучшенные текстовые поля для планшетов */
+  textarea.input-modern {
+    min-height: 100px;
+  }
+  
+  /* Компактная сетка для полей ввода */
+  .col-span-2 {
+    grid-column: span 2;
+  }
+  
+  /* Заголовки секций */
+  h5 {
+    font-size: 1.3rem;
+  }
+  
+  h6 {
+    font-size: 1.1rem;
+  }
+}
+
+/* Вертикальная ориентация планшета */
+@media (min-width: 768px) and (max-width: 992px) and (orientation: portrait) {
+  .filter-card-modern .filter-body {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-item:last-child {
+    grid-column: span 1;
+  }
+  
+  .form-grid-modern {
+    grid-template-columns: 1fr;
+  }
+  
+  .table-responsive {
+    margin-left: -10px;
+    margin-right: -10px;
+  }
+}
+
+/* Горизонтальная ориентация планшета */
+@media (min-width: 768px) and (max-width: 992px) and (orientation: landscape) {
+  .table-modern {
+    min-width: 900px;
+  }
+}
+
+/* Оптимизация для планшетов в промежуточных размерах */
+@media (min-width: 820px) and (max-width: 912px) {
+  .form-grid-modern {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .filter-card-modern .filter-body {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Улучшение касаний для планшетов */
+@media (hover: none) and (pointer: coarse) {
+  .btn {
+    min-height: 48px;
+    padding: 0.7rem 1.4rem;
+  }
+  
+  .table-actions-modern .btn {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .form-control, .form-select {
+    font-size: 16px !important; /* Предотвращает масштабирование в iOS */
+    min-height: 52px;
+  }
+  
+  .form-check-input {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* В конец файла tables.css добавьте */
+
+/* Исправление для кнопок в таблице действий */
+.table-actions-modern .btn {
+  border-width: 1.5px !important;
+  border-style: solid !important;
+}
+
+/* Явные стили для каждой кнопки */
+.table-actions-modern .btn-outline-secondary {
+  color: var(--bs-secondary) !important;
+  border-color: var(--bs-secondary) !important;
+  background-color: transparent !important;
+}
+
+.table-actions-modern .btn-outline-secondary:hover,
+.table-actions-modern .btn-outline-secondary:focus {
+  color: white !important;
+  background-color: var(--bs-secondary) !important;
+  border-color: var(--bs-secondary) !important;
+}
+
+/* Для primary кнопки (когда статус не "роды не начались") */
+.table-actions-modern .btn-primary {
+  color: white !important;
+  border-color: var(--bs-primary) !important;
+  background-color: var(--bs-primary) !important;
+}
+
+.table-actions-modern .btn-primary:hover,
+.table-actions-modern .btn-primary:focus {
+  background-color: var(--bs-primary-dark) !important;
+  border-color: var(--bs-primary-dark) !important;
+}
+
+/* Для outline-primary (когда статус "роды не начались") */
+.table-actions-modern .btn-outline-primary {
+  color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  background-color: transparent !important;
+}
+
+.table-actions-modern .btn-outline-primary:hover,
+.table-actions-modern .btn-outline-primary:focus {
+  color: white !important;
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+}
+
+/* Для danger кнопки */
+.table-actions-modern .btn-outline-danger {
+  color: var(--bs-danger) !important;
+  border-color: var(--bs-danger) !important;
+  background-color: transparent !important;
+}
+
+.table-actions-modern .btn-outline-danger:hover,
+.table-actions-modern .btn-outline-danger:focus {
+  color: white !important;
+  background-color: var(--bs-danger) !important;
+  border-color: var(--bs-danger) !important;
+}
+
+/* Гарантируем одинаковый внешний вид всех кнопок */
+.table-actions-modern .btn {
+  min-width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px !important;
+  transition: all 0.2s ease;
+}
+
+.table-actions-modern .btn i {
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Состояния активных/неактивных кнопок */
+.table-actions-modern .btn:not(:disabled):not(.disabled) {
+  opacity: 1;
+}
+
+/* Адаптивность для планшетов */
+@media (max-width: 992px) {
+  .table-actions-modern .btn {
+    width: 38px;
+    height: 38px;
+  }
+  
+  .table-actions-modern .btn i {
+    font-size: 0.95rem;
+  }
+}

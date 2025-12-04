@@ -1,0 +1,229 @@
+/* /public/css/theme.css - Обновленная цветовая схема */
+:root {
+  /* Основная палитра (ваши цвета) */
+  --bs-primary: #54c654;           /* Основной зеленый */
+  --bs-primary-dark: #3a8a3a;      /* Темный зеленый */
+  --bs-primary-light: #e8f5e9;     /* Светлый зеленый */
+  --bs-primary-border: #4ab84a;    /* Граница зеленого */
+  
+  /* Вторичный цвет - на основе вашего secondary-color */
+  --bs-secondary: #6c757d;         /* Серый для вторичных элементов */
+  
+  /* Семантические цвета */
+  --bs-success: #28a745;           /* Зеленый успеха */
+  --bs-info: #17a2b8;              /* Голубой информации */
+  --bs-warning: #ffc107;           /* Желтый предупреждения */
+  --bs-danger: #dc3545;            /* Красный опасности */
+  
+  /* Системные цвета Bootstrap (заменяем на ваши) */
+  --bs-blue: #007bff;              /* Синий */
+  --bs-indigo: #6610f2;
+  --bs-purple: #6f42c1;
+  --bs-pink: #e83e8c;
+  --bs-red: #dc3545;
+  --bs-orange: #fd7e14;
+  --bs-yellow: #ffc107;
+  --bs-green: #28a745;
+  --bs-teal: #20c997;
+  --bs-cyan: #17a2b8;
+  
+  /* Оттенки серого */
+  --bs-white: #fff;
+  --bs-gray-100: #f8f9fa;          /* light-color */
+  --bs-gray-200: #e9ecef;
+  --bs-gray-300: #dee2e6;
+  --bs-gray-400: #ced4da;
+  --bs-gray-500: #adb5bd;
+  --bs-gray-600: #6c757d;          /* secondary-color */
+  --bs-gray-700: #495057;
+  --bs-gray-800: #343a40;          /* dark-color */
+  --bs-gray-900: #212529;
+  --bs-black: #000;
+  
+  /* Основные цвета приложения */
+  --bs-body-color: #333;           /* text-color */
+  --bs-body-bg: #f8f9fa;           /* bg-light */
+  --bs-light: #f8f9fa;             /* light-color */
+  --bs-dark: #343a40;              /* dark-color */
+  
+  /* Дополнительные ваши переменные */
+  --main-color: #54c654;
+  --main-color-dark: #3a8a3a;
+  --main-color-light: #e8f5e9;
+  --main-color-border: #4ab84a;
+  --secondary-color: #6c757d;
+  --info-color: #17a2b8;
+  --primary-color: #007bff;
+  --danger-color: #dc3545;
+  --success-color: #28a745;
+  --warning-color: #ffc107;
+  --light-color: #f8f9fa;
+  --dark-color: #343a40;
+  --text-color: #333;
+  --text-light: #fff;
+  --bg-light: #f8f9fa;
+  --black-color: black;
+  --gray-color: gray;
+  
+  /* Градиенты на основе новых цветов */
+  --gradient-primary: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-dark) 100%);
+  --gradient-primary-light: linear-gradient(135deg, var(--bs-primary-light) 0%, white 100%);
+  
+  /* Глобальные настройки */
+  --bs-body-font-family: 'Jost', -apple-system, BlinkMacSystemFont, sans-serif;
+  --bs-border-radius: 10px;
+  --bs-border-color: #dee2e6;
+  --bs-link-color: var(--bs-primary);
+  --bs-link-hover-color: var(--bs-primary-dark);
+}
+
+/* Переопределяем компоненты Bootstrap */
+.btn-primary {
+  --bs-btn-bg: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary-border);
+  --bs-btn-hover-bg: var(--bs-primary-dark);
+  --bs-btn-hover-border-color: var(--bs-primary-dark);
+  --bs-btn-active-bg: var(--bs-primary-dark);
+  --bs-btn-active-border-color: var(--bs-primary-dark);
+  --bs-btn-disabled-bg: var(--bs-primary);
+  --bs-btn-disabled-border-color: var(--bs-primary);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary-border);
+  --bs-btn-hover-bg: var(--bs-primary);
+  --bs-btn-hover-border-color: var(--bs-primary);
+  --bs-btn-active-bg: var(--bs-primary);
+  --bs-btn-active-border-color: var(--bs-primary);
+}
+
+.btn-success {
+  --bs-btn-bg: var(--bs-success);
+  --bs-btn-border-color: #218838;
+  --bs-btn-hover-bg: #218838;
+  --bs-btn-hover-border-color: #1e7e34;
+}
+
+.btn-danger {
+  --bs-btn-bg: var(--bs-danger);
+  --bs-btn-border-color: #c82333;
+  --bs-btn-hover-bg: #c82333;
+  --bs-btn-hover-border-color: #bd2130;
+}
+
+.alert-success {
+  --bs-alert-bg: rgba(40, 167, 69, 0.1);
+  --bs-alert-border-color: rgba(40, 167, 69, 0.3);
+  --bs-alert-color: #155724;
+}
+
+.alert-danger {
+  --bs-alert-bg: rgba(220, 53, 69, 0.1);
+  --bs-alert-border-color: rgba(220, 53, 69, 0.3);
+  --bs-alert-color: #721c24;
+}
+
+/* Навигация */
+.navbar-main {
+  background: var(--gradient-primary) !important;
+}
+
+/* Карточки */
+.card-header-modern {
+  background: var(--gradient-primary) !important;
+}
+
+/* Прогресс-бары */
+.progress {
+  --bs-progress-bg: var(--bs-gray-200);
+}
+
+.progress-bar {
+  --bs-progress-bar-bg: var(--bs-primary);
+}
+
+/* Таблицы */
+.table {
+  --bs-table-hover-bg: rgba(84, 198, 84, 0.05);
+}
+
+/* Формы */
+.form-control:focus, .form-select:focus {
+  border-color: var(--bs-primary-border);
+  box-shadow: 0 0 0 0.25rem rgba(84, 198, 84, 0.25);
+}
+
+/* Тёмная тема (опционально) */
+[data-bs-theme="dark"] {
+  --bs-body-bg: #1a1a1a;
+  --bs-body-color: #f8f9fa;
+  --bs-primary: #45b845;
+  --bs-primary-dark: #2d7a2d;
+}
+
+/* В :root добавьте или убедитесь, что есть эти переменные */
+:root {
+  /* ... существующие переменные ... */
+  
+  /* Outline кнопки */
+  --bs-btn-outline-secondary-color: var(--bs-secondary);
+  --bs-btn-outline-secondary-border-color: var(--bs-secondary);
+  --bs-btn-outline-secondary-hover-color: #fff;
+  --bs-btn-outline-secondary-hover-bg: var(--bs-secondary);
+  --bs-btn-outline-secondary-hover-border-color: var(--bs-secondary);
+  --bs-btn-outline-secondary-active-color: #fff;
+  --bs-btn-outline-secondary-active-bg: var(--bs-secondary);
+  --bs-btn-outline-secondary-active-border-color: var(--bs-secondary);
+  --bs-btn-outline-secondary-disabled-color: var(--bs-secondary);
+  --bs-btn-outline-secondary-disabled-bg: transparent;
+  --bs-btn-outline-secondary-disabled-border-color: var(--bs-secondary);
+  
+  /* Для primary outline тоже */
+  --bs-btn-outline-primary-color: var(--bs-primary);
+  --bs-btn-outline-primary-border-color: var(--bs-primary-border);
+  --bs-btn-outline-primary-hover-color: #fff;
+  --bs-btn-outline-primary-hover-bg: var(--bs-primary);
+  --bs-btn-outline-primary-hover-border-color: var(--bs-primary);
+  --bs-btn-outline-primary-active-color: #fff;
+  --bs-btn-outline-primary-active-bg: var(--bs-primary);
+  --bs-btn-outline-primary-active-border-color: var(--bs-primary);
+  
+  /* Для danger outline */
+  --bs-btn-outline-danger-color: var(--bs-danger);
+  --bs-btn-outline-danger-border-color: #dc3545;
+  --bs-btn-outline-danger-hover-color: #fff;
+  --bs-btn-outline-danger-hover-bg: var(--bs-danger);
+  --bs-btn-outline-danger-hover-border-color: var(--bs-danger);
+}
+
+/* Явно определите стили для outline-кнопок */
+.btn-outline-secondary {
+  --bs-btn-color: var(--bs-btn-outline-secondary-color);
+  --bs-btn-border-color: var(--bs-btn-outline-secondary-border-color);
+  --bs-btn-hover-color: var(--bs-btn-outline-secondary-hover-color);
+  --bs-btn-hover-bg: var(--bs-btn-outline-secondary-hover-bg);
+  --bs-btn-hover-border-color: var(--bs-btn-outline-secondary-hover-border-color);
+  --bs-btn-active-color: var(--bs-btn-outline-secondary-active-color);
+  --bs-btn-active-bg: var(--bs-btn-outline-secondary-active-bg);
+  --bs-btn-active-border-color: var(--bs-btn-outline-secondary-active-border-color);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--bs-btn-outline-primary-color);
+  --bs-btn-border-color: var(--bs-btn-outline-primary-border-color);
+  --bs-btn-hover-color: var(--bs-btn-outline-primary-hover-color);
+  --bs-btn-hover-bg: var(--bs-btn-outline-primary-hover-bg);
+  --bs-btn-hover-border-color: var(--bs-btn-outline-primary-hover-border-color);
+  --bs-btn-active-color: var(--bs-btn-outline-primary-active-color);
+  --bs-btn-active-bg: var(--bs-btn-outline-primary-active-bg);
+  --bs-btn-active-border-color: var(--bs-btn-outline-primary-active-border-color);
+}
+
+.btn-outline-danger {
+  --bs-btn-color: var(--bs-btn-outline-danger-color);
+  --bs-btn-border-color: var(--bs-btn-outline-danger-border-color);
+  --bs-btn-hover-color: var(--bs-btn-outline-danger-hover-color);
+  --bs-btn-hover-bg: var(--bs-btn-outline-danger-hover-bg);
+  --bs-btn-hover-border-color: var(--bs-btn-outline-danger-hover-border-color);
+}

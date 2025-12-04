@@ -1,0 +1,114 @@
+/* /public/css/utilities.css */
+/* Утилитарные классы для нового дизайна */
+
+/* Анимации */
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in {
+  animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Тени */
+.shadow-subtle {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.shadow-medium {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-strong {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+}
+
+/* Границы */
+.border-subtle {
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.border-primary-subtle {
+  border: 1px solid rgba(84, 198, 84, 0.2);
+}
+
+/* Скругления */
+.rounded-lg {
+  border-radius: 16px;
+}
+
+.rounded-xl {
+  border-radius: 20px;
+}
+
+/* Отступы для планшетов */
+@media (min-width: 768px) and (max-width: 992px) {
+  .pt-tablet-3 {
+    padding-top: 1rem !important;
+  }
+  
+  .pb-tablet-3 {
+    padding-bottom: 1rem !important;
+  }
+  
+  .mt-tablet-4 {
+    margin-top: 1.5rem !important;
+  }
+}
+
+/* Улучшенный hover для карточек */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Градиенты */
+.gradient-primary {
+  background: linear-gradient(135deg, var(--bs-primary) 0%, #3a8a3a 100%);
+}
+
+.gradient-secondary {
+  background: linear-gradient(135deg, var(--bs-secondary) 0%, #0ca678 100%);
+}
+
+/* Текст */
+.text-gradient-primary {
+  background: linear-gradient(135deg, var(--bs-primary) 0%, #3a8a3a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Иконки */
+.icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-circle-primary {
+  background-color: rgba(84, 198, 84, 0.1);
+  color: var(--bs-primary);
+}
+
+.icon-circle-secondary {
+  background-color: rgba(32, 201, 151, 0.1);
+  color: var(--bs-secondary);
+}
