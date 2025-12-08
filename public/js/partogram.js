@@ -234,7 +234,20 @@ class PartogramManager {
     const useCurrentTime = document.getElementById('use-current-time').checked;
     if (useCurrentTime) {
       delete data.measurement_time;
+    } else {
+      // Преобразуем локальное время в ISO строку
+      const timeInput = document.getElementById('measurement-time');
+      if (timeInput.value) {
+        data.measurement_time = timeInput.value;
+      }
     }
+    
+    // Очищаем пустые значения
+    Object.keys(data).forEach(key => {
+      if (data[key] === '' || data[key] === undefined) {
+        delete data[key];
+      }
+    });
     
     const saveBtn = document.getElementById('save-partogram-btn');
     const originalText = saveBtn.innerHTML;
@@ -245,10 +258,12 @@ class PartogramManager {
       // Преобразуем данные для отправки
       const params = new URLSearchParams();
       Object.keys(data).forEach(key => {
-        if (data[key] !== '' && data[key] !== undefined) {
+        if (data[key] !== null && data[key] !== undefined) {
           params.append(key, data[key]);
         }
       });
+      
+      console.log('Отправляемые данные:', Object.fromEntries(params));
       
       const response = await fetch(`/api/patients/${this.patientId}/partogram_entries`, {
         method: 'POST',
@@ -278,13 +293,13 @@ class PartogramManager {
         saveBtn.disabled = false;
       }
     } catch (error) {
-      this.showNotification('Ошибка при сохранении измерения', 'danger');
+      this.showNotification('Ошибка при сохранении измерения: ' + error.message, 'danger');
       console.error('Ошибка:', error);
       saveBtn.innerHTML = originalText;
       saveBtn.disabled = false;
     }
   }
-  
+    
   // Инициализация кнопок удаления записей
   initDeleteEntryButtons() {
     const deleteButtons = document.querySelectorAll('.delete-entry-btn');

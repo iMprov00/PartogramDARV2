@@ -3,12 +3,14 @@ require 'sinatra/activerecord'
 require 'require_all'
 require 'json'
 require 'securerandom'
+require 'active_support/time'
 
 # Загружаем все файлы
 require_all 'models'
 
-# Устанавливаем часовой пояс для всего приложения
-Time.zone = 'Asia/Novosibirsk'
+# Устанавливаем часовой пояс для ActiveSupport
+#Time.zone = 'Asia/Novosibirsk'
+#ActiveSupport::TimeZone[-7] = 'Asia/Novosibirsk' # GMT+7 для Новосибирска
 
 # Включаем логирование
 configure do
@@ -19,7 +21,7 @@ configure do
   set :views, 'views'
   set :session_secret, ENV['SESSION_SECRET'] || SecureRandom.hex(64)
   
-  # Для ActiveRecord 8+ используем новое API
+  # Настройки часового пояса для ActiveRecord
   ActiveRecord.default_timezone = :local
   
   # Отключаем CSRF защиту для всех запросов
@@ -37,17 +39,37 @@ end
 # Добавим хелпер для получения текущего времени с учетом часового пояса
 helpers do
   def current_time
-    Time.current.in_time_zone('Asia/Novosibirsk')
+    # Просто используем системное время
+    Time.now
   end
   
   def format_time(datetime)
     return '' unless datetime
-    datetime.in_time_zone('Asia/Novosibirsk').strftime('%H:%M:%S')
+    # Приводим к местному времени и форматируем
+    datetime.strftime('%H:%M:%S')
   end
   
   def format_datetime(datetime)
     return '' unless datetime
-    datetime.in_time_zone('Asia/Novosibirsk').strftime('%d.%m.%Y %H:%M:%S')
+    datetime.strftime('%d.%m.%Y %H:%M:%S')
+  end
+  
+  def parse_time_string(time_string)
+    return nil unless time_string
+    begin
+      # Парсим строку и создаем время напрямую
+      # Формат: "2025-12-08T10:47"
+      parts = time_string.split(/[-T:]/).map(&:to_i)
+      
+      if parts.length >= 5
+        Time.new(parts[0], parts[1], parts[2], parts[3], parts[4], 0)
+      else
+        nil
+      end
+    rescue => e
+      logger.error "Ошибка парсинга времени: #{time_string}, ошибка: #{e.message}"
+      nil
+    end
   end
 end
 
@@ -211,56 +233,7 @@ get '/api/patients/:id/data' do
   }.to_json
 end
 
-# API для сохранения измерения
-post '/api/patients/:id/measurements' do
-  content_type :json
-  patient = Patient.find(params[:id])
-  
-  # Если это первое измерение и статус "роды не начались", меняем статус
-  if patient.status == Patient::STATUSES[:not_started]
-    patient.update(
-      status: Patient::STATUSES[:in_progress],
-      labor_start: current_time
-    )
-  end
-  
-  measurement = patient.measurements.create(
-    heart_rate: params[:heart_rate].to_i,
-    measured_at: current_time
-  )
-  
-  if measurement.persisted?
-    { success: true, remaining_time: patient.remaining_time }.to_json
-  else
-    { success: false, errors: measurement.errors.full_messages }.to_json
-  end
-end
-
-# API для завершения родов
-post '/api/patients/:id/complete_labor' do
-  content_type :json
-  patient = Patient.find(params[:id])
-  
-  if patient.update(status: Patient::STATUSES[:completed])
-    { success: true }.to_json
-  else
-    { success: false, errors: patient.errors.full_messages }.to_json
-  end
-end
-
-get '/api/patients/:id/partogram_entries' do
-  content_type :json
-  patient = Patient.find(params[:id])
-  
-  patient.partogram_entries.order(time: :desc).to_json(
-    only: [:id, :time, :fetal_heart_rate, :decelerations, :amniotic_fluid, 
-           :presentation, :caput, :molding, :maternal_pulse, :blood_pressure,
-           :temperature, :urination, :contraction_frequency, :contraction_duration,
-           :pushing, :cervical_dilation, :head_descent, :oxytocin, :medications, :iv_fluids]
-  )
-end
-
-# API для создания записи партограммы
+# API для сохранения записи партограммы
 post '/api/patients/:id/partogram_entries' do
   content_type :json
   patient = Patient.find(params[:id])
@@ -274,13 +247,19 @@ post '/api/patients/:id/partogram_entries' do
   end
   
   # Определяем время для записи
-  measurement_time = if params[:measurement_time].present?
+  measurement_time = if params[:measurement_time].present? && params[:measurement_time] != ''
     # Парсим время из формы (формат: YYYY-MM-DDTHH:MM)
-    Time.zone.parse(params[:measurement_time])
+    parse_time_string(params[:measurement_time])
   else
-    # Используем текущее время сервера
+    # Используем текущее время
     current_time
   end
+  
+  if measurement_time.nil?
+    return { success: false, errors: ['Некорректный формат времени'] }.to_json
+  end
+  
+  logger.info "Создание записи партограммы для пациента #{patient.id}, время: #{measurement_time}"
   
   # Создаем запись
   entry = patient.partogram_entries.create(
@@ -306,6 +285,7 @@ post '/api/patients/:id/partogram_entries' do
   )
   
   if entry.persisted?
+    logger.info "Запись успешно создана: #{entry.id}"
     { 
       success: true, 
       remaining_time: patient.remaining_time,
@@ -313,8 +293,22 @@ post '/api/patients/:id/partogram_entries' do
       next_measurement_time: patient.next_measurement_time&.strftime('%H:%M')
     }.to_json
   else
+    logger.error "Ошибка при создании записи: #{entry.errors.full_messages}"
     { success: false, errors: entry.errors.full_messages }.to_json
   end
+end
+
+# API для получения записей партограммы
+get '/api/patients/:id/partogram_entries' do
+  content_type :json
+  patient = Patient.find(params[:id])
+  
+  patient.partogram_entries.order(time: :desc).to_json(
+    only: [:id, :time, :fetal_heart_rate, :decelerations, :amniotic_fluid, 
+           :presentation, :caput, :molding, :maternal_pulse, :blood_pressure,
+           :temperature, :urination, :contraction_frequency, :contraction_duration,
+           :pushing, :cervical_dilation, :head_descent, :oxytocin, :medications, :iv_fluids]
+  )
 end
 
 # API для удаления записи партограммы
@@ -327,5 +321,17 @@ delete '/api/patients/:patient_id/partogram_entries/:id' do
     { success: true }.to_json
   else
     { success: false, errors: entry.errors.full_messages }.to_json
+  end
+end
+
+# API для завершения родов
+post '/api/patients/:id/complete_labor' do
+  content_type :json
+  patient = Patient.find(params[:id])
+  
+  if patient.update(status: Patient::STATUSES[:completed])
+    { success: true }.to_json
+  else
+    { success: false, errors: patient.errors.full_messages }.to_json
   end
 end

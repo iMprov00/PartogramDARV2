@@ -74,14 +74,13 @@ GEM
     timeout (0.4.4)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
-    tzinfo-data (1.2025.2)
-      tzinfo (>= 1.0.0)
     uri (1.1.1)
 
 PLATFORMS
   x64-mingw-ucrt
 
 DEPENDENCIES
+  activesupport
   dotenv
   puma
   rake
@@ -91,8 +90,6 @@ DEPENDENCIES
   sinatra-activerecord
   sinatra-flash
   sqlite3
-  tzinfo
-  tzinfo-data
 
 BUNDLED WITH
    2.6.9
