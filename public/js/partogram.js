@@ -1,4 +1,4 @@
-// public/js/partogram.js - ПОЛНОСТЬЮ ОБНОВЛЕННЫЙ КОД
+// public/js/partogram.js - ИСПРАВЛЕННЫЙ КОД С ПЕРЕЗАГРУЗКОЙ
 
 class PartogramManager {
   constructor(patientId) {
@@ -145,26 +145,30 @@ class PartogramManager {
   }
   
   // Загрузка данных пациента
-async loadPatientData() {
-  try {
-    const response = await fetch(`/api/patients/${this.patientId}/data?_=${Date.now()}`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
-    const data = await response.json();
-    
-    this.remainingTime = data.remaining_time;
-    this.currentPeriod = data.period || 1;
-    
-    this.updateTimerDisplay();
-    this.updatePeriodDisplay();
-    
-    console.log('Patient data loaded');
-  } catch (error) {
-    console.error('Error loading patient data:', error);
-    throw error;
+  async loadPatientData() {
+    try {
+      const response = await fetch(`/api/patients/${this.patientId}/data?_=${Date.now()}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const data = await response.json();
+      
+      this.remainingTime = data.remaining_time;
+      this.currentPeriod = data.period || 1;
+      
+      this.updateTimerDisplay();
+      this.updatePeriodDisplay();
+      
+      // ДОБАВЬ ЭТУ СТРОЧКУ
+      this.updateFixedTimer();
+      
+      console.log('Patient data loaded');
+    } catch (error) {
+      console.error('Error loading patient data:', error);
+      throw error;
+    }
   }
-}
   
+  // Синхронизация с сервером
   // Синхронизация с сервером
   async syncWithServer(force = false) {
     const now = Date.now();
@@ -200,6 +204,7 @@ async loadPatientData() {
       // Обновляем отображение
       this.updateTimerDisplay();
       this.updatePeriodDisplay();
+      this.updateFixedTimer(); // ДОБАВЬ ЭТУ СТРОЧКУ
       
       // Если период изменился, показываем уведомление
       if (oldPeriod !== this.currentPeriod) {
@@ -288,6 +293,7 @@ async loadPatientData() {
         }
       }
     }
+        this.updateFixedTimer();
   }
   
   // Обновление отображения периода
@@ -295,12 +301,6 @@ async loadPatientData() {
     const periodElement = document.querySelector('.timer-label');
     if (periodElement) {
       periodElement.textContent = `Период ${this.currentPeriod}`;
-    }
-    
-    // Обновляем текст в форме если есть
-    const periodHint = document.querySelector('small.text-muted');
-    if (periodHint && this.currentPeriod === 1) {
-      periodHint.textContent = '10 см = 2 период';
     }
   }
   
@@ -395,6 +395,35 @@ async loadPatientData() {
     this.initDeleteEntryButtons();
   }
   
+updateFixedTimer() {
+    const fixedTimerDisplay = document.getElementById('fixed-timer-display');
+    const fixedPeriodDisplay = document.getElementById('fixed-period-display');
+    const fixedTimerContainer = document.getElementById('fixed-timer-container');
+    
+    if (fixedTimerDisplay && fixedPeriodDisplay && fixedTimerContainer) {
+      // Обновление периода
+      fixedPeriodDisplay.textContent = this.currentPeriod;
+      
+      // Форматирование времени
+      const hours = Math.floor(this.remainingTime / 3600);
+      const minutes = Math.floor((this.remainingTime % 3600) / 60);
+      const seconds = this.remainingTime % 60;
+      fixedTimerDisplay.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      
+      // Обновление стилей
+      fixedTimerContainer.classList.remove('timer-warning', 'timer-danger');
+      
+      const warningThreshold = this.currentPeriod === 2 ? 150 : 300;
+      const dangerThreshold = this.currentPeriod === 2 ? 60 : 120;
+      
+      if (this.remainingTime < dangerThreshold) {
+        fixedTimerContainer.classList.add('timer-danger');
+      } else if (this.remainingTime < warningThreshold) {
+        fixedTimerContainer.classList.add('timer-warning');
+      }
+    }
+  }
+
   // Настройка обработчиков событий
   setupEventListeners() {
     // Форма партограммы
@@ -583,7 +612,7 @@ async loadPatientData() {
     }
   }
   
-  // Удаление выбранной записи
+  // Удаление выбранной записи - ПРОСТО ПЕРЕЗАГРУЖАЕМ СТРАНИЦУ
   async deleteSelectedEntry() {
     if (!this.entryToDelete) {
       this.showNotification('Ошибка: запись для удаления не выбрана', 'danger');
@@ -606,23 +635,24 @@ async loadPatientData() {
         // Закрываем модальное окно
         this.closeModal('deleteEntryModal');
         
-        // Синхронизируемся с сервером
-        await this.syncWithServer(true);
+        // Показываем уведомление
+        this.showNotification('Измерение удалено. Перезагрузка страницы...', 'success', 1500);
         
-        // Обновляем записи
-        await this.loadPartogramEntries();
+        // Перезагружаем страницу через 1.5 секунды
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
         
-        this.showNotification('Измерение удалено', 'success');
       } else {
         this.showNotification('Ошибка при удалении: ' + (result.errors || ['Неизвестная ошибка']).join(', '), 'danger');
+        confirmBtn.innerHTML = originalText;
+        confirmBtn.disabled = false;
       }
     } catch (error) {
       this.showNotification('Ошибка при удалении записи: ' + error.message, 'danger');
       console.error('Ошибка:', error);
-    } finally {
       confirmBtn.innerHTML = originalText;
       confirmBtn.disabled = false;
-      this.entryToDelete = null;
     }
   }
   
@@ -650,24 +680,22 @@ async loadPatientData() {
         // Закрываем модальное окно
         this.closeModal('completeLaborModal');
         
-        // Обновляем статус пациента
-        await this.loadPatientData();
+        // Показываем уведомление
+        this.showNotification('Роды успешно завершены! Перезагрузка страницы...', 'success', 1500);
         
-        // Отключаем кнопку завершения родов
-        const completeBtn = document.getElementById('complete-labor-btn');
-        if (completeBtn) {
-          completeBtn.disabled = true;
-        }
-        
-        this.showNotification('Роды успешно завершены!', 'success');
+        // Перезагружаем страницу через 1.5 секунды
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
         
       } else {
         this.showNotification('Ошибка при завершении родов', 'danger');
+        confirmBtn.innerHTML = originalText;
+        confirmBtn.disabled = false;
       }
     } catch (error) {
       this.showNotification('Ошибка при завершении родов', 'danger');
       console.error('Ошибка:', error);
-    } finally {
       confirmBtn.innerHTML = originalText;
       confirmBtn.disabled = false;
     }
@@ -763,3 +791,94 @@ document.addEventListener('DOMContentLoaded', function() {
     console.error('Не удалось определить ID пациента из URL:', window.location.pathname);
   }
 });
+
+// Стили для фиксированного таймера с БЕЛЫМ ТЕКСТОМ ВСЕГДА
+const fixedTimerStyles = `
+  /* Фиксированный таймер */
+  .fixed-timer-container {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1050;
+    background: linear-gradient(135deg, #54c654 0%, #3a8a3a 100%);
+    color: white !important;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    min-width: 160px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .fixed-timer-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+  }
+  
+  .fixed-timer-content {
+    text-align: center;
+  }
+  
+  .fixed-timer-header {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    margin-bottom: 0.25rem;
+    color: white !important;
+  }
+  
+  .fixed-timer-value {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 1.5rem;
+    line-height: 1;
+    margin: 0.25rem 0;
+    color: white !important;
+  }
+  
+  .fixed-timer-patient {
+    font-size: 0.7rem;
+    opacity: 0.8;
+    border-top: 1px dashed rgba(255, 255, 255, 0.3);
+    padding-top: 0.25rem;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: white !important;
+  }
+  
+  /* Состояния таймера - ВСЕ РАВНО БЕЛЫЙ ТЕКСТ */
+  .fixed-timer-container.timer-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    color: white !important;
+  }
+  
+  .fixed-timer-container.timer-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%);
+    color: white !important;
+  }
+  
+  /* Адаптивность для мобильных */
+  @media (max-width: 768px) {
+    .fixed-timer-container {
+      bottom: 10px;
+      left: 10px;
+      padding: 0.5rem;
+      min-width: 140px;
+    }
+    
+    .fixed-timer-value {
+      font-size: 1.2rem;
+    }
+  }
+  
+  /* Убедимся, что внутри контейнера все тексты белые */
+  .fixed-timer-container * {
+    color: white !important;
+  }
+`;
+
+// Добавляем стили в документ
+const styleElement = document.createElement('style');
+styleElement.textContent = fixedTimerStyles;
+document.head.appendChild(styleElement);
