@@ -312,17 +312,31 @@ get '/api/patients/:id/partogram_entries' do
 end
 
 # API для удаления записи партограммы
-delete '/api/patients/:patient_id/partogram_entries/:id' do
-  content_type :json
-  patient = Patient.find(params[:patient_id])
-  entry = patient.partogram_entries.find(params[:id])
-  
-  if entry.destroy
-    { success: true }.to_json
-  else
-    { success: false, errors: entry.errors.full_messages }.to_json
+  delete '/api/patients/:patient_id/partogram_entries/:id' do
+    content_type :json
+    patient = Patient.find(params[:patient_id])
+    
+    begin
+      entry = patient.partogram_entries.find_by(id: params[:id])
+      
+      if entry.nil?
+        logger.info "Запись #{params[:id]} уже удалена или не существует"
+        return { success: true }.to_json
+      end
+      
+      if entry.destroy
+        logger.info "Запись успешно удалена: #{params[:id]}"
+        { success: true }.to_json
+      else
+        logger.error "Ошибка при удалении записи: #{entry.errors.full_messages}"
+        { success: false, errors: entry.errors.full_messages }.to_json
+      end
+    rescue => e
+      logger.error "Исключение при удалении записи: #{e.message}"
+      { success: false, errors: ['Внутренняя ошибка сервера'] }.to_json
+    end
   end
-end
+
 
 # API для завершения родов
 post '/api/patients/:id/complete_labor' do

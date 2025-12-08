@@ -1,4 +1,4 @@
-// public/js/partogram.js - обновленная версия
+// public/js/partogram.js - обновленная версия с модальным окном
 class PartogramManager {
   constructor(patientId) {
     this.patientId = patientId;
@@ -7,6 +7,7 @@ class PartogramManager {
     this.remainingTime = 0;
     this.currentPeriod = 1;
     this.entries = [];
+    this.entryToDelete = null; // Храним запись для удаления
     
     this.init();
   }
@@ -125,6 +126,7 @@ class PartogramManager {
     
     this.entries.forEach(entry => {
       const row = document.createElement('tr');
+      row.id = `entry-row-${entry.id}`;
       
       // Форматируем время
       const time = new Date(entry.time);
@@ -153,6 +155,13 @@ class PartogramManager {
         }
       }
       
+      // Формируем детали записи для модального окна
+      const details = [
+        entry.fetal_heart_rate ? `ЧСС: ${entry.fetal_heart_rate}` : null,
+        entry.cervical_dilation !== null ? `Раскрытие: ${entry.cervical_dilation} см` : null,
+        entry.amniotic_fluid ? `Воды: ${entry.amniotic_fluid}` : null
+      ].filter(Boolean).join(', ');
+      
       row.innerHTML = `
         <td>${timeStr}</td>
         <td>${entry.fetal_heart_rate || '—'}</td>
@@ -165,6 +174,8 @@ class PartogramManager {
           <button type="button" 
                   class="btn btn-sm btn-outline-danger delete-entry-btn" 
                   data-entry-id="${entry.id}"
+                  data-entry-time="${timeStr}"
+                  data-entry-details="${details}"
                   title="Удалить">
             <i class="bi bi-trash"></i>
           </button>
@@ -206,14 +217,127 @@ class PartogramManager {
       completeBtn.addEventListener('click', () => this.showCompleteModal());
     }
     
-    // Подтверждение завершения
-    const confirmBtn = document.getElementById('confirm-complete-labor');
-    if (confirmBtn) {
-      confirmBtn.addEventListener('click', () => this.completeLabor());
+    // Подтверждение завершения родов
+    const confirmCompleteBtn = document.getElementById('confirm-complete-labor');
+    if (confirmCompleteBtn) {
+      confirmCompleteBtn.addEventListener('click', () => this.completeLabor());
+    }
+    
+    // Подтверждение удаления записи
+    const confirmDeleteEntryBtn = document.getElementById('confirm-delete-entry');
+    if (confirmDeleteEntryBtn) {
+      confirmDeleteEntryBtn.addEventListener('click', () => this.deleteSelectedEntry());
     }
     
     // Кнопки удаления записей
     this.initDeleteEntryButtons();
+  }
+  
+  // Инициализация кнопок удаления записей
+  initDeleteEntryButtons() {
+    const deleteButtons = document.querySelectorAll('.delete-entry-btn');
+    
+    deleteButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        this.entryToDelete = {
+          id: button.dataset.entryId,
+          time: button.dataset.entryTime,
+          details: button.dataset.entryDetails
+        };
+        
+        this.showDeleteEntryModal();
+      });
+    });
+  }
+  
+  // Показать модальное окно удаления записи
+  showDeleteEntryModal() {
+    if (!this.entryToDelete) return;
+    
+    const timeElement = document.getElementById('entry-time-to-delete');
+    const detailsElement = document.getElementById('entry-details-to-delete');
+    
+    if (timeElement) {
+      timeElement.textContent = this.entryToDelete.time;
+    }
+    
+    if (detailsElement) {
+      detailsElement.textContent = this.entryToDelete.details || 'Нет дополнительных данных';
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteEntryModal'));
+    modal.show();
+  }
+  
+  // Удаление выбранной записи
+  async deleteSelectedEntry() {
+    if (!this.entryToDelete) {
+      this.showNotification('Ошибка: запись для удаления не выбрана', 'danger');
+      return;
+    }
+    
+    const confirmBtn = document.getElementById('confirm-delete-entry');
+    const originalText = confirmBtn.innerHTML;
+    confirmBtn.innerHTML = '<i class="bi bi-trash me-2"></i>Удаление...';
+    confirmBtn.disabled = true;
+    
+    try {
+      const response = await fetch(`/api/patients/${this.patientId}/partogram_entries/${this.entryToDelete.id}`, {
+        method: 'DELETE'
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Корректно закрываем модальное окно
+        const modalElement = document.getElementById('deleteEntryModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        
+        if (modal) {
+          // Скрываем модальное окно
+          modal.hide();
+          
+          // Ждем завершения анимации скрытия
+          setTimeout(() => {
+            // Удаляем фоновый overlay если он остался
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+              backdrop.remove();
+            }
+            
+            // Убираем класс с body
+            document.body.classList.remove('modal-open');
+            document.body.style.paddingRight = '';
+          }, 150);
+        }
+        
+        // Удаляем строку из таблицы
+        const row = document.getElementById(`entry-row-${this.entryToDelete.id}`);
+        if (row) {
+          row.remove();
+        }
+        
+        // Удаляем запись из массива
+        this.entries = this.entries.filter(entry => entry.id !== parseInt(this.entryToDelete.id));
+        
+        this.showNotification('Запись успешно удалена', 'success');
+        
+        // Обновляем данные пациента
+        await this.loadPatientData();
+      } else {
+        this.showNotification('Ошибка при удалении: ' + (result.errors || ['Неизвестная ошибка']).join(', '), 'danger');
+      }
+    } catch (error) {
+      this.showNotification('Ошибка при удалении записи', 'danger');
+      console.error('Ошибка:', error);
+    } finally {
+      confirmBtn.innerHTML = originalText;
+      confirmBtn.disabled = false;
+      this.entryToDelete = null;
+    }
   }
   
   // Обработка отправки формы партограммы
@@ -279,10 +403,6 @@ class PartogramManager {
         // Показываем уведомление
         this.showNotification('Измерение сохранено! Страница перезагрузится...', 'success');
         
-        // Обновляем данные
-        this.remainingTime = result.remaining_time;
-        this.currentPeriod = result.period;
-        
         // Перезагружаем страницу через 1.5 секунды
         setTimeout(() => {
           window.location.reload();
@@ -297,43 +417,6 @@ class PartogramManager {
       console.error('Ошибка:', error);
       saveBtn.innerHTML = originalText;
       saveBtn.disabled = false;
-    }
-  }
-    
-  // Инициализация кнопок удаления записей
-  initDeleteEntryButtons() {
-    const deleteButtons = document.querySelectorAll('.delete-entry-btn');
-    
-    deleteButtons.forEach(button => {
-      button.addEventListener('click', (e) => {
-        e.preventDefault();
-        const entryId = button.dataset.entryId;
-        
-        if (confirm('Вы уверены, что хотите удалить это измерение?')) {
-          this.deletePartogramEntry(entryId);
-        }
-      });
-    });
-  }
-  
-  // Удаление записи партограммы
-  async deletePartogramEntry(entryId) {
-    try {
-      const response = await fetch(`/api/patients/${this.patientId}/partogram_entries/${entryId}`, {
-        method: 'DELETE'
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        this.showNotification('Измерение удалено', 'success');
-        await this.loadPartogramEntries();
-      } else {
-        this.showNotification('Ошибка при удалении: ' + result.errors.join(', '), 'danger');
-      }
-    } catch (error) {
-      this.showNotification('Ошибка при удалении измерения', 'danger');
-      console.error('Ошибка:', error);
     }
   }
   
@@ -383,6 +466,10 @@ class PartogramManager {
   
   // Показать уведомление
   showNotification(message, type = 'info') {
+    // Удаляем старые уведомления
+    const oldAlerts = document.querySelectorAll('.custom-notification');
+    oldAlerts.forEach(alert => alert.remove());
+    
     const alertDiv = document.createElement('div');
     alertDiv.className = `custom-notification alert alert-${type} alert-dismissible fade show`;
     
@@ -431,7 +518,7 @@ class PartogramManager {
 document.addEventListener('DOMContentLoaded', function() {
   const timerElement = document.getElementById('timer-display-container');
   if (timerElement) {
-    // Находим patient_id из URL или другого места
+    // Находим patient_id из URL
     const urlParts = window.location.pathname.split('/');
     const patientId = urlParts[urlParts.length - 2]; // /patients/1/partogram
     
