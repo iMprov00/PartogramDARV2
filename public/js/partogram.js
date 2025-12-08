@@ -1,13 +1,12 @@
-// public/js/partogram.js
-class PartogramTimer {
+// public/js/partogram.js - обновленная версия
+class PartogramManager {
   constructor(patientId) {
     this.patientId = patientId;
     this.serverTimeOffset = 0;
     this.timerInterval = null;
     this.remainingTime = 0;
-    this.currentDuration = 30; // в минутах
     this.currentPeriod = 1;
-    this.measurementHistory = [];
+    this.entries = [];
     
     this.init();
   }
@@ -15,8 +14,10 @@ class PartogramTimer {
   async init() {
     await this.syncServerTime();
     await this.loadPatientData();
+    await this.loadPartogramEntries();
     this.startTimer();
     this.setupEventListeners();
+    this.setupTimeControls();
   }
   
   // Синхронизация времени с сервером
@@ -39,68 +40,142 @@ class PartogramTimer {
       const data = await response.json();
       
       this.remainingTime = data.remaining_time;
-      this.currentDuration = data.current_duration;
-      this.currentPeriod = data.remaining_time > 0 ? (data.current_duration === 15 ? 2 : 1) : 1;
-      this.measurementHistory = data.measurements || [];
+      this.currentPeriod = data.period || 1;
       
-      this.updateUI();
-      this.updateMeasurementHistory();
+      this.updateTimerDisplay();
     } catch (error) {
-      console.error('Ошибка загрузки данных:', error);
+      console.error('Ошибка загрузки данных пациента:', error);
     }
   }
   
-  // Обновление UI
-  updateUI() {
-    // Обновление таймера
-    const minutes = Math.floor(this.remainingTime / 60);
-    const seconds = this.remainingTime % 60;
-    document.getElementById('timer-display').textContent = 
-      `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  // Настройка управления временем
+  setupTimeControls() {
+    const useCurrentTimeCheckbox = document.getElementById('use-current-time');
+    const timeInput = document.getElementById('measurement-time');
     
-    // Обновление периода
-    document.getElementById('current-period').textContent = this.currentPeriod;
-    document.getElementById('timer-duration').textContent = `${this.currentDuration} мин`;
-    
-    // Обновление прогресс-бара
-    const progressRing = document.querySelector('.progress-ring-progress');
-    if (progressRing) {
-      const circumference = 2 * Math.PI * 90;
-      const offset = circumference - (this.remainingTime / (this.currentDuration * 60)) * circumference;
-      progressRing.style.strokeDashoffset = Math.max(0, offset);
+    if (useCurrentTimeCheckbox && timeInput) {
+      // Устанавливаем текущее время по умолчанию
+      const now = new Date();
+      const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      timeInput.value = localDateTime;
       
-      // Меняем цвет в зависимости от времени
-      if (this.remainingTime < 60) {
-        progressRing.style.stroke = '#dc3545'; // Красный при < 1 минуты
-      } else if (this.remainingTime < 300) {
-        progressRing.style.stroke = '#ffc107'; // Желтый при < 5 минут
+      // Обработчик изменения чекбокса
+      useCurrentTimeCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+          // Использовать текущее время
+          timeInput.disabled = true;
+          const now = new Date();
+          const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+          timeInput.value = localDateTime;
+        } else {
+          // Разрешить ручной ввод
+          timeInput.disabled = false;
+        }
+      });
+      
+      // По умолчанию используем текущее время
+      useCurrentTimeCheckbox.checked = true;
+      timeInput.disabled = true;
+    }
+  }
+  
+  // Загрузка записей партограммы
+  async loadPartogramEntries() {
+    try {
+      const response = await fetch(`/api/patients/${this.patientId}/partogram_entries`);
+      this.entries = await response.json();
+      this.updatePartogramTable();
+    } catch (error) {
+      console.error('Ошибка загрузки записей партограммы:', error);
+    }
+  }
+  
+  // Обновление отображения таймера
+  updateTimerDisplay() {
+    const timerDisplay = document.getElementById('timer-display');
+    const currentPeriodEl = document.getElementById('current-period');
+    
+    if (timerDisplay) {
+      const hours = Math.floor(this.remainingTime / 3600);
+      const minutes = Math.floor((this.remainingTime % 3600) / 60);
+      const seconds = this.remainingTime % 60;
+      timerDisplay.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      
+      // Меняем цвет в зависимости от оставшегося времени
+      if (this.remainingTime < 300) { // < 5 минут
+        timerDisplay.style.color = '#dc3545';
+      } else if (this.remainingTime < 600) { // < 10 минут
+        timerDisplay.style.color = '#ffc107';
       } else {
-        progressRing.style.stroke = '#0d6efd'; // Синий в остальное время
+        timerDisplay.style.color = '#0d6efd';
       }
     }
+    
+    if (currentPeriodEl) {
+      currentPeriodEl.textContent = this.currentPeriod;
+    }
   }
   
-  // Обновление истории измерений
-  updateMeasurementHistory() {
-    const tbody = document.getElementById('measurements-tbody');
+  // Обновление таблицы партограммы
+  updatePartogramTable() {
+    const tbody = document.getElementById('partogram-tbody');
     if (!tbody) return;
     
     tbody.innerHTML = '';
     
-    this.measurementHistory.forEach(measurement => {
+    this.entries.forEach(entry => {
       const row = document.createElement('tr');
+      
+      // Форматируем время
+      const time = new Date(entry.time);
+      const timeStr = time.toLocaleTimeString('ru-RU', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      
+      // Определяем цвет для раскрытия
+      let dilationBadge = '—';
+      if (entry.cervical_dilation !== null) {
+        const badgeClass = entry.cervical_dilation >= 10 ? 'bg-success' : 'bg-info';
+        dilationBadge = `<span class="badge ${badgeClass}">${entry.cervical_dilation} см</span>`;
+      }
+      
+      // Информация о схватках
+      let contractionsInfo = '—';
+      if (entry.contraction_frequency) {
+        contractionsInfo = `${entry.contraction_frequency} в 10 мин`;
+        if (entry.contraction_duration) {
+          contractionsInfo += ` / ${entry.contraction_duration} сек`;
+        }
+        if (entry.pushing) {
+          contractionsInfo += ' (П)';
+        }
+      }
+      
       row.innerHTML = `
-        <td>${measurement.measured_at}</td>
-        <td>${measurement.heart_rate}</td>
+        <td>${timeStr}</td>
+        <td>${entry.fetal_heart_rate || '—'}</td>
+        <td>${entry.decelerations || '—'}</td>
+        <td>${entry.amniotic_fluid || '—'}</td>
+        <td>${entry.presentation || '—'}</td>
+        <td>${dilationBadge}</td>
+        <td>${contractionsInfo}</td>
         <td>
-          <span class="badge ${measurement.period == 1 ? 'bg-info' : 'bg-warning'}">
-            Период ${measurement.period}
-          </span>
+          <button type="button" 
+                  class="btn btn-sm btn-outline-danger delete-entry-btn" 
+                  data-entry-id="${entry.id}"
+                  title="Удалить">
+            <i class="bi bi-trash"></i>
+          </button>
         </td>
-        <td>${measurement.period == 1 ? '30 мин' : '15 мин'}</td>
       `;
+      
       tbody.appendChild(row);
     });
+    
+    // Инициализируем кнопки удаления
+    this.initDeleteEntryButtons();
   }
   
   // Запуск таймера
@@ -112,17 +187,17 @@ class PartogramTimer {
     this.timerInterval = setInterval(() => {
       if (this.remainingTime > 0) {
         this.remainingTime--;
-        this.updateUI();
+        this.updateTimerDisplay();
       }
     }, 1000);
   }
   
   // Настройка обработчиков событий
   setupEventListeners() {
-    // Форма измерения
-    const measurementForm = document.getElementById('measurement-form');
-    if (measurementForm) {
-      measurementForm.addEventListener('submit', (e) => this.handleMeasurementSubmit(e));
+    // Форма партограммы
+    const partogramForm = document.getElementById('partogram-form');
+    if (partogramForm) {
+      partogramForm.addEventListener('submit', (e) => this.handlePartogramSubmit(e));
     }
     
     // Кнопка завершения родов
@@ -136,46 +211,69 @@ class PartogramTimer {
     if (confirmBtn) {
       confirmBtn.addEventListener('click', () => this.completeLabor());
     }
+    
+    // Кнопки удаления записей
+    this.initDeleteEntryButtons();
   }
   
-  // Обработка отправки измерения
-  async handleMeasurementSubmit(e) {
+  // Обработка отправки формы партограммы
+  async handlePartogramSubmit(e) {
     e.preventDefault();
     
-    const heartRateInput = document.getElementById('heart-rate');
-    const heartRate = parseInt(heartRateInput.value);
+    const form = e.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
     
-    if (!heartRate || heartRate < 1) {
-      alert('Пожалуйста, введите корректное значение ЧДД');
+    // Проверяем обязательные поля
+    if (!data.fetal_heart_rate && !data.cervical_dilation && !data.contraction_frequency) {
+      this.showNotification('Заполните хотя бы одно поле измерения', 'warning');
       return;
     }
     
-    const saveBtn = document.getElementById('save-measurement-btn');
+    // Если чекбокс "Использовать текущее время" отмечен, не отправляем поле времени
+    const useCurrentTime = document.getElementById('use-current-time').checked;
+    if (useCurrentTime) {
+      delete data.measurement_time;
+    }
+    
+    const saveBtn = document.getElementById('save-partogram-btn');
     const originalText = saveBtn.innerHTML;
     saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Сохранение...';
     saveBtn.disabled = true;
     
     try {
-      const response = await fetch(`/api/patients/${this.patientId}/measurements`, {
+      // Преобразуем данные для отправки
+      const params = new URLSearchParams();
+      Object.keys(data).forEach(key => {
+        if (data[key] !== '' && data[key] !== undefined) {
+          params.append(key, data[key]);
+        }
+      });
+      
+      const response = await fetch(`/api/patients/${this.patientId}/partogram_entries`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `heart_rate=${heartRate}`
+        body: params
       });
       
-      const data = await response.json();
+      const result = await response.json();
       
-      if (data.success) {
+      if (result.success) {
         // Показываем уведомление
         this.showNotification('Измерение сохранено! Страница перезагрузится...', 'success');
+        
+        // Обновляем данные
+        this.remainingTime = result.remaining_time;
+        this.currentPeriod = result.period;
         
         // Перезагружаем страницу через 1.5 секунды
         setTimeout(() => {
           window.location.reload();
         }, 1500);
       } else {
-        this.showNotification('Ошибка при сохранении: ' + data.errors.join(', '), 'danger');
+        this.showNotification('Ошибка при сохранении: ' + result.errors.join(', '), 'danger');
         saveBtn.innerHTML = originalText;
         saveBtn.disabled = false;
       }
@@ -184,6 +282,43 @@ class PartogramTimer {
       console.error('Ошибка:', error);
       saveBtn.innerHTML = originalText;
       saveBtn.disabled = false;
+    }
+  }
+  
+  // Инициализация кнопок удаления записей
+  initDeleteEntryButtons() {
+    const deleteButtons = document.querySelectorAll('.delete-entry-btn');
+    
+    deleteButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        const entryId = button.dataset.entryId;
+        
+        if (confirm('Вы уверены, что хотите удалить это измерение?')) {
+          this.deletePartogramEntry(entryId);
+        }
+      });
+    });
+  }
+  
+  // Удаление записи партограммы
+  async deletePartogramEntry(entryId) {
+    try {
+      const response = await fetch(`/api/patients/${this.patientId}/partogram_entries/${entryId}`, {
+        method: 'DELETE'
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        this.showNotification('Измерение удалено', 'success');
+        await this.loadPartogramEntries();
+      } else {
+        this.showNotification('Ошибка при удалении: ' + result.errors.join(', '), 'danger');
+      }
+    } catch (error) {
+      this.showNotification('Ошибка при удалении измерения', 'danger');
+      console.error('Ошибка:', error);
     }
   }
   
@@ -212,27 +347,16 @@ class PartogramTimer {
           this.timerInterval = null;
         }
         
-        // Обновляем UI
-        document.getElementById('timer-display').textContent = '00:00';
-        document.querySelector('.progress-ring-progress').style.strokeDashoffset = '565.48';
-        
-        // Обновляем статус на странице
-        const statusBadge = document.querySelector('.status-badge-modern');
-        statusBadge.className = 'badge status-badge-modern bg-success fs-6';
-        statusBadge.textContent = 'роды завершены';
-        
-        // Отключаем кнопки
-        document.getElementById('save-measurement-btn').disabled = true;
-        document.getElementById('complete-labor-btn').disabled = true;
-        
         // Закрываем модальное окно
         const modal = bootstrap.Modal.getInstance(document.getElementById('completeLaborModal'));
         modal.hide();
         
-        this.showNotification('Роды успешно завершены!', 'success');
+        this.showNotification('Роды успешно завершены! Страница перезагрузится...', 'success');
         
-        // Обновляем данные
-        setTimeout(() => this.loadPatientData(), 1000);
+        // Перезагружаем страницу через 1.5 секунды
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       } else {
         this.showNotification('Ошибка при завершении родов', 'danger');
       }
@@ -244,19 +368,14 @@ class PartogramTimer {
   
   // Показать уведомление
   showNotification(message, type = 'info') {
-    // Удаляем старые уведомления
-    const oldAlerts = document.querySelectorAll('.custom-notification');
-    oldAlerts.forEach(alert => alert.remove());
-    
     const alertDiv = document.createElement('div');
     alertDiv.className = `custom-notification alert alert-${type} alert-dismissible fade show`;
     
-    // Стили для корректного отображения
     Object.assign(alertDiv.style, {
       position: 'fixed',
-      top: '80px', // Отступ от верха под навбаром
+      top: '80px',
       right: '20px',
-      zIndex: '1060', // Выше чем у навбара (обычно 1055)
+      zIndex: '1060',
       maxWidth: '400px',
       minWidth: '300px',
       boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
@@ -276,53 +395,10 @@ class PartogramTimer {
     
     document.body.appendChild(alertDiv);
     
-    // Добавим анимацию
-    const style = document.createElement('style');
-    if (!document.querySelector('#notification-styles')) {
-      style.id = 'notification-styles';
-      style.textContent = `
-        @keyframes slideInRight {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        
-        @keyframes slideOutRight {
-          from {
-            transform: translateX(0);
-            opacity: 1;
-          }
-          to {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-        }
-        
-        .custom-notification {
-          animation: slideInRight 0.3s ease-out;
-        }
-        
-        .custom-notification.fade {
-          animation: slideOutRight 0.3s ease-out forwards;
-        }
-      `;
-      document.head.appendChild(style);
-    }
-    
     // Автоматически скрыть через 5 секунд
     setTimeout(() => {
       if (alertDiv.parentNode) {
-        alertDiv.classList.add('fade');
-        setTimeout(() => {
-          if (alertDiv.parentNode) {
-            alertDiv.remove();
-          }
-        }, 300);
+        alertDiv.remove();
       }
     }, 5000);
     
@@ -330,12 +406,7 @@ class PartogramTimer {
     const closeBtn = alertDiv.querySelector('.btn-close');
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
-        alertDiv.classList.add('fade');
-        setTimeout(() => {
-          if (alertDiv.parentNode) {
-            alertDiv.remove();
-          }
-        }, 300);
+        alertDiv.remove();
       });
     }
   }
@@ -343,9 +414,16 @@ class PartogramTimer {
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
-  const timerElement = document.getElementById('patient-timer');
+  const timerElement = document.getElementById('timer-display-container');
   if (timerElement) {
-    const patientId = timerElement.dataset.patientId;
-    window.partogramTimer = new PartogramTimer(patientId);
+    // Находим patient_id из URL или другого места
+    const urlParts = window.location.pathname.split('/');
+    const patientId = urlParts[urlParts.length - 2]; // /patients/1/partogram
+    
+    if (patientId && !isNaN(patientId)) {
+      window.partogramManager = new PartogramManager(patientId);
+    } else {
+      console.error('Не удалось определить ID пациента');
+    }
   }
 });

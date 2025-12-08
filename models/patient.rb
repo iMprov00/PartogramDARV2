@@ -4,7 +4,7 @@ class Patient < ActiveRecord::Base
   validates :admission_date, presence: true
   validates :status, presence: true
   
-  has_many :measurements, dependent: :destroy
+  has_many :partogram_entries, dependent: :destroy
   
   STATUSES = {
     not_started: "роды не начались",
@@ -16,7 +16,7 @@ class Patient < ActiveRecord::Base
   def as_json(options = {})
     super(options.merge(
       except: [:updated_at],
-      methods: [:status_color, :timer_text, :timer_class, :remaining_time, :current_timer_duration]
+      methods: [:status_color, :timer_text, :timer_class, :remaining_time, :current_timer_duration, :period, :next_measurement_time]
     ))
   end
   
@@ -37,7 +37,6 @@ class Patient < ActiveRecord::Base
     return "00:00:00" if status != STATUSES[:in_progress]
     
     if labor_start.present?
-      # Используем текущее время с учетом часового пояса
       duration = (Time.current.in_time_zone('Asia/Novosibirsk') - labor_start.in_time_zone('Asia/Novosibirsk')).to_i
       format_time(duration)
     else
@@ -75,6 +74,23 @@ class Patient < ActiveRecord::Base
     end
   end
   
+  # Определяем текущий период родов (1 или 2)
+  def period
+    # Ищем последнее измерение с раскрытием шейки матки
+    last_dilation = partogram_entries.where.not(cervical_dilation: nil).order(time: :desc).first
+    
+    if last_dilation && last_dilation.cervical_dilation >= 10
+      2
+    else
+      1
+    end
+  end
+  
+  # Длительность таймера в зависимости от периода
+  def current_timer_duration
+    period == 2 ? 15 : 30
+  end
+  
   # Время до окончания текущего таймера в секундах
   def remaining_time
     return 0 unless status == STATUSES[:in_progress] && last_measurement_time
@@ -85,18 +101,27 @@ class Patient < ActiveRecord::Base
     remaining > 0 ? remaining : 0
   end
   
-  # Текущая длительность таймера в минутах
-  def current_timer_duration
-    return 30 unless measurements.any?
-    
-    last_measurement = measurements.order(measured_at: :desc).first
-    # Если последнее измерение ЧДД > 120, то 15 минут, иначе 30
-    last_measurement.heart_rate > 120 ? 15 : 30
+  # Время последнего измерения в партограмме
+  def last_measurement_time
+    partogram_entries.order(time: :desc).first&.time
   end
   
-  # Время последнего измерения
-  def last_measurement_time
-    measurements.order(measured_at: :desc).first&.measured_at
+  # Рекомендуемое время следующего измерения
+  def next_measurement_time
+    return nil unless last_measurement_time
+    
+    interval_minutes = case period
+                      when 1
+                        # В первом периоде: ЧСС плода каждые 30 мин, воды каждые 4 часа при норме
+                        30
+                      when 2
+                        # Во втором периоде: чаще
+                        15
+                      else
+                        30
+                      end
+    
+    last_measurement_time + interval_minutes.minutes
   end
   
   private

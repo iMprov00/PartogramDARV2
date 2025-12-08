@@ -198,11 +198,14 @@ get '/api/patients/:id/data' do
     status: patient.status,
     remaining_time: patient.remaining_time,
     current_duration: patient.current_timer_duration,
-    measurements: patient.measurements.order(measured_at: :desc).limit(10).map do |m|
+    period: patient.period,
+    measurements: patient.partogram_entries.order(time: :desc).limit(10).map do |entry|
       {
-        heart_rate: m.heart_rate,
-        measured_at: format_time(m.measured_at),
-        period: m.period
+        id: entry.id,
+        time: format_time(entry.time),
+        fetal_heart_rate: entry.fetal_heart_rate,
+        cervical_dilation: entry.cervical_dilation,
+        contraction_frequency: entry.contraction_frequency
       }
     end
   }.to_json
@@ -242,5 +245,87 @@ post '/api/patients/:id/complete_labor' do
     { success: true }.to_json
   else
     { success: false, errors: patient.errors.full_messages }.to_json
+  end
+end
+
+get '/api/patients/:id/partogram_entries' do
+  content_type :json
+  patient = Patient.find(params[:id])
+  
+  patient.partogram_entries.order(time: :desc).to_json(
+    only: [:id, :time, :fetal_heart_rate, :decelerations, :amniotic_fluid, 
+           :presentation, :caput, :molding, :maternal_pulse, :blood_pressure,
+           :temperature, :urination, :contraction_frequency, :contraction_duration,
+           :pushing, :cervical_dilation, :head_descent, :oxytocin, :medications, :iv_fluids]
+  )
+end
+
+# API для создания записи партограммы
+post '/api/patients/:id/partogram_entries' do
+  content_type :json
+  patient = Patient.find(params[:id])
+  
+  # Если это первая запись и статус "роды не начались", меняем статус
+  if patient.status == Patient::STATUSES[:not_started]
+    patient.update(
+      status: Patient::STATUSES[:in_progress],
+      labor_start: current_time
+    )
+  end
+  
+  # Определяем время для записи
+  measurement_time = if params[:measurement_time].present?
+    # Парсим время из формы (формат: YYYY-MM-DDTHH:MM)
+    Time.zone.parse(params[:measurement_time])
+  else
+    # Используем текущее время сервера
+    current_time
+  end
+  
+  # Создаем запись
+  entry = patient.partogram_entries.create(
+    time: measurement_time,
+    fetal_heart_rate: params[:fetal_heart_rate],
+    decelerations: params[:decelerations],
+    amniotic_fluid: params[:amniotic_fluid],
+    presentation: params[:presentation],
+    caput: params[:caput],
+    molding: params[:molding],
+    maternal_pulse: params[:maternal_pulse],
+    blood_pressure: params[:blood_pressure],
+    temperature: params[:temperature],
+    urination: params[:urination] == 'true',
+    contraction_frequency: params[:contraction_frequency],
+    contraction_duration: params[:contraction_duration],
+    pushing: params[:pushing] == 'true',
+    cervical_dilation: params[:cervical_dilation],
+    head_descent: params[:head_descent],
+    oxytocin: params[:oxytocin],
+    medications: params[:medications],
+    iv_fluids: params[:iv_fluids]
+  )
+  
+  if entry.persisted?
+    { 
+      success: true, 
+      remaining_time: patient.remaining_time,
+      period: patient.period,
+      next_measurement_time: patient.next_measurement_time&.strftime('%H:%M')
+    }.to_json
+  else
+    { success: false, errors: entry.errors.full_messages }.to_json
+  end
+end
+
+# API для удаления записи партограммы
+delete '/api/patients/:patient_id/partogram_entries/:id' do
+  content_type :json
+  patient = Patient.find(params[:patient_id])
+  entry = patient.partogram_entries.find(params[:id])
+  
+  if entry.destroy
+    { success: true }.to_json
+  else
+    { success: false, errors: entry.errors.full_messages }.to_json
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 3) do
+ActiveRecord::Schema[8.1].define(version: 4) do
   create_table "measurements", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "heart_rate"
@@ -20,6 +20,33 @@ ActiveRecord::Schema[8.1].define(version: 3) do
     t.datetime "updated_at", null: false
     t.index ["measured_at"], name: "index_measurements_on_measured_at"
     t.index ["patient_id"], name: "index_measurements_on_patient_id"
+  end
+
+  create_table "partogram_entries", force: :cascade do |t|
+    t.string "amniotic_fluid"
+    t.string "blood_pressure"
+    t.string "caput"
+    t.integer "cervical_dilation"
+    t.integer "contraction_duration"
+    t.integer "contraction_frequency"
+    t.datetime "created_at", null: false
+    t.string "decelerations"
+    t.integer "fetal_heart_rate"
+    t.integer "head_descent"
+    t.text "iv_fluids"
+    t.integer "maternal_pulse"
+    t.text "medications"
+    t.string "molding"
+    t.string "oxytocin"
+    t.integer "patient_id", null: false
+    t.string "presentation"
+    t.boolean "pushing"
+    t.decimal "temperature"
+    t.datetime "time", precision: nil, null: false
+    t.datetime "updated_at", null: false
+    t.boolean "urination"
+    t.index ["patient_id"], name: "index_partogram_entries_on_patient_id"
+    t.index ["time"], name: "index_partogram_entries_on_time"
   end
 
   create_table "patients", force: :cascade do |t|
@@ -42,4 +69,5 @@ ActiveRecord::Schema[8.1].define(version: 3) do
   end
 
   add_foreign_key "measurements", "patients"
+  add_foreign_key "partogram_entries", "patients"
 end
