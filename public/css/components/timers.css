@@ -1,0 +1,126 @@
+/* public/css/components/timers.css */
+/* Стили для таймеров */
+
+/* Таймер на главной странице */
+.timer-badge-modern {
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  min-width: 85px;
+  text-align: center;
+}
+
+.timer-primary {
+  background-color: #e3f2fd !important;
+  color: #0d6efd !important;
+  border: 2px solid #0d6efd;
+}
+
+.timer-warning {
+  background-color: #fff3cd !important;
+  color: #ffc107 !important;
+  border: 2px solid #ffc107;
+  animation: pulse 2s infinite;
+}
+
+.timer-danger {
+  background-color: #f8d7da !important;
+  color: #dc3545 !important;
+  border: 2px solid #dc3545;
+  animation: pulse 1s infinite;
+}
+
+.timer-completed {
+  background-color: #f8f9fa !important;
+  color: #6c757d !important;
+  border: 2px solid #dee2e6;
+}
+
+/* Анимация пульсации для срочных таймеров */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Таймер на странице партограммы */
+.timer-display-large {
+  font-family: 'Courier New', monospace;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0d6efd;
+  background: #f8f9fa;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  border: 3px solid #0d6efd;
+  text-align: center;
+  min-width: 140px;
+}
+
+.timer-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+.timer-circle {
+  position: relative;
+  width: 200px;
+  height: 200px;
+}
+
+.progress-ring {
+  transform: rotate(-90deg);
+}
+
+.progress-ring-circle {
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.timer-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Courier New', monospace;
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Отображение периода */
+.current-period-display {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border: 2px solid #dee2e6;
+}
+
+.period-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+.period-value {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #0d6efd;
+  line-height: 1;
+}
+
+.period-duration {
+  font-size: 1rem;
+  color: #495057;
+  margin-top: 0.5rem;
+}
+
+/* Карточка информации о пациентке */
+.patient-info-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 2px solid #e9ecef;
+}

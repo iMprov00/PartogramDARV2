@@ -7,6 +7,9 @@ require 'securerandom'
 # Загружаем все файлы
 require_all 'models'
 
+# Устанавливаем часовой пояс для всего приложения
+Time.zone = 'Asia/Novosibirsk'
+
 # Включаем логирование
 configure do
   enable :logging
@@ -15,6 +18,12 @@ configure do
   set :public_folder, 'public'
   set :views, 'views'
   set :session_secret, ENV['SESSION_SECRET'] || SecureRandom.hex(64)
+  
+  # Для ActiveRecord 8+ используем новое API
+  ActiveRecord.default_timezone = :local
+  
+  # Отключаем CSRF защиту для всех запросов
+  set :protection, false
   
   # Логирование запросов
   use Rack::CommonLogger
@@ -25,10 +34,32 @@ configure do
   end
 end
 
+# Добавим хелпер для получения текущего времени с учетом часового пояса
+helpers do
+  def current_time
+    Time.current.in_time_zone('Asia/Novosibirsk')
+  end
+  
+  def format_time(datetime)
+    return '' unless datetime
+    datetime.in_time_zone('Asia/Novosibirsk').strftime('%H:%M:%S')
+  end
+  
+  def format_datetime(datetime)
+    return '' unless datetime
+    datetime.in_time_zone('Asia/Novosibirsk').strftime('%d.%m.%Y %H:%M:%S')
+  end
+end
+
 # Перед каждым запросом
 before do
   logger.info "==> #{request.request_method} #{request.path}"
   logger.info "Params: #{params.inspect}" if params.any?
+  
+  # Отключаем CSRF для API запросов
+  if request.path =~ /^\/api\//
+    env['rack.session.options'][:skip] = true
+  end
 end
 
 # После каждого запроса
@@ -109,7 +140,7 @@ delete '/patients/:id' do
   redirect '/patients'
 end
 
-# Заглушка для партограммы
+# Страница партограммы
 get '/patients/:id/partogram' do
   @patient = Patient.find(params[:id])
   erb :'patients/show'
@@ -152,23 +183,64 @@ get '/api/patients' do
   patients.order(created_at: :desc).to_json
 end
 
-# Маршрут для отладки
-get '/debug' do
-  content_type :text/plain
-  "Debug endpoint\n" +
-  "Patients count: #{Patient.count}\n" +
-  "Session: #{session.inspect}\n" +
-  "Params: #{params.inspect}"
+# API для получения времени сервера
+get '/api/server_time' do
+  content_type :json
+  { time: current_time.to_i }.to_json
 end
 
-# Обработка ошибок
-not_found do
-  logger.error "Route not found: #{request.path}"
-  status 404
-  erb :'errors/404'
+# API для получения данных пациента
+get '/api/patients/:id/data' do
+  content_type :json
+  patient = Patient.find(params[:id])
+  
+  {
+    status: patient.status,
+    remaining_time: patient.remaining_time,
+    current_duration: patient.current_timer_duration,
+    measurements: patient.measurements.order(measured_at: :desc).limit(10).map do |m|
+      {
+        heart_rate: m.heart_rate,
+        measured_at: format_time(m.measured_at),
+        period: m.period
+      }
+    end
+  }.to_json
 end
 
-error 500 do
-  logger.error "Server error: #{env['sinatra.error'].message}"
-  erb :'errors/500'
+# API для сохранения измерения
+post '/api/patients/:id/measurements' do
+  content_type :json
+  patient = Patient.find(params[:id])
+  
+  # Если это первое измерение и статус "роды не начались", меняем статус
+  if patient.status == Patient::STATUSES[:not_started]
+    patient.update(
+      status: Patient::STATUSES[:in_progress],
+      labor_start: current_time
+    )
+  end
+  
+  measurement = patient.measurements.create(
+    heart_rate: params[:heart_rate].to_i,
+    measured_at: current_time
+  )
+  
+  if measurement.persisted?
+    { success: true, remaining_time: patient.remaining_time }.to_json
+  else
+    { success: false, errors: measurement.errors.full_messages }.to_json
+  end
+end
+
+# API для завершения родов
+post '/api/patients/:id/complete_labor' do
+  content_type :json
+  patient = Patient.find(params[:id])
+  
+  if patient.update(status: Patient::STATUSES[:completed])
+    { success: true }.to_json
+  else
+    { success: false, errors: patient.errors.full_messages }.to_json
+  end
 end

@@ -9,6 +9,8 @@ gem 'require_all'
 gem 'dotenv'
 gem 'sinatra-flash'
 #gem 'thin'
+gem 'tzinfo'
+gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw]
 
 group :development do
   gem 'rerun'

@@ -1,4 +1,9 @@
-// /public/js/app.js - Оптимизированная версия для нового дизайна
+// /public/js/app.js - Полностью обновленная версия с таймерами каждую секунду
+
+// Глобальные переменные
+let patientsDataCache = {};
+let indexTimerInterval = null;
+let activeTimers = new Map(); // Хранит активные таймеры
 
 // Глобальная функция applyFilters
 function applyFilters() {
@@ -31,9 +36,19 @@ function applyFilters() {
     })
     .then(patients => {
       console.log('Received patients:', patients.length);
+      
+      // Кэшируем данные пациентов для обновления таймеров
+      patientsDataCache = {};
+      patients.forEach(patient => {
+        patientsDataCache[patient.id] = patient;
+      });
+      
       updatePatientsTable(patients);
       updatePatientsCount(patients.length);
       showLoading(false);
+      
+      // Запускаем обновление таймеров после загрузки таблицы
+      startIndexTimers();
     })
     .catch(error => {
       console.error('Error fetching patients:', error);
@@ -89,18 +104,8 @@ function updatePatientsTable(patients) {
       statusText = 'Роды завершены';
     }
     
-    // Таймер
-    let timerText = 'Не активно';
-    let timerClass = 'timer-completed';
-    
-    if (patient.status === 'в родах') {
-      // Здесь можно добавить логику расчета времени
-      timerText = '00:00:00';
-      timerClass = 'timer-danger';
-    } else if (patient.status === 'роды не начались') {
-      timerText = '—';
-      timerClass = 'timer-completed';
-    }
+    // Получаем данные таймера
+    const timerData = getTimerData(patient);
     
     // Форматируем дату
     let formattedDate = '';
@@ -133,8 +138,13 @@ function updatePatientsTable(patients) {
         </span>
       </td>
       <td>
-        <span class="badge timer-badge-modern ${timerClass}">
-          ${timerText}
+        <span class="badge timer-badge-modern ${timerData.class}" 
+              id="timer-${patient.id}"
+              data-patient-id="${patient.id}"
+              data-remaining-time="${timerData.remaining}"
+              data-duration="${timerData.duration}"
+              data-status="${patient.status}">
+          ${timerData.text}
         </span>
       </td>
       <td>
@@ -163,6 +173,49 @@ function updatePatientsTable(patients) {
   initDeleteButtons();
 }
 
+// Получение данных таймера
+function getTimerData(patient) {
+  if (patient.status !== 'в родах') {
+    return {
+      text: '—',
+      class: 'timer-completed',
+      remaining: 0,
+      duration: 0
+    };
+  }
+  
+  let remainingTime = patient.remaining_time || 0;
+  
+  // Если данные есть, форматируем
+  if (remainingTime > 0) {
+    const minutes = Math.floor(remainingTime / 60);
+    const seconds = remainingTime % 60;
+    const timerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    let timerClass = 'timer-primary';
+    if (remainingTime < 300) { // < 5 минут
+      timerClass = 'timer-danger';
+    } else if (remainingTime < 600) { // < 10 минут
+      timerClass = 'timer-warning';
+    }
+    
+    return {
+      text: timerText,
+      class: timerClass,
+      remaining: remainingTime,
+      duration: patient.current_timer_duration || 30
+    };
+  } else {
+    // Таймер истек, но статус еще "в родах"
+    return {
+      text: '00:00',
+      class: 'timer-danger',
+      remaining: 0,
+      duration: patient.current_timer_duration || 30
+    };
+  }
+}
+
 // Вспомогательная функция для кнопки партограммы
 function getPartogramButton(patient) {
   if (patient.status === 'роды не начались') {
@@ -181,6 +234,150 @@ function getPartogramButton(patient) {
         <i class="bi bi-graph-up"></i>
       </a>
     `;
+  }
+}
+
+// Запуск обновления таймеров на главной странице
+function startIndexTimers() {
+  // Останавливаем предыдущий интервал
+  if (indexTimerInterval) {
+    clearInterval(indexTimerInterval);
+  }
+  
+  // Обновляем таймеры сразу
+  updateIndexTimers();
+  
+  // Запускаем обновление каждую секунду
+  indexTimerInterval = setInterval(updateIndexTimers, 1000);
+  
+  // Синхронизируем с сервером каждые 30 секунд
+  setInterval(syncTimersWithServer, 30000);
+}
+
+// Обновление всех таймеров на главной странице
+function updateIndexTimers() {
+  const timerBadges = document.querySelectorAll('.timer-badge-modern[data-patient-id]');
+  
+  if (timerBadges.length === 0) return;
+  
+  timerBadges.forEach(badge => {
+    const status = badge.dataset.status;
+    
+    // Обновляем только активные таймеры (статус "в родах")
+    if (status === 'в родах') {
+      updateSingleTimer(badge);
+    }
+  });
+}
+
+// Обновление одного таймера
+function updateSingleTimer(badge) {
+  let remainingTime = parseInt(badge.dataset.remainingTime) || 0;
+  const duration = parseInt(badge.dataset.duration) || 30;
+  
+  if (remainingTime > 0) {
+    // Уменьшаем оставшееся время
+    remainingTime--;
+    badge.dataset.remainingTime = remainingTime;
+    
+    // Обновляем отображение
+    const minutes = Math.floor(remainingTime / 60);
+    const seconds = remainingTime % 60;
+    badge.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    // Обновляем классы
+    badge.classList.remove('timer-primary', 'timer-warning', 'timer-danger');
+    
+    if (remainingTime < 300) { // < 5 минут
+      badge.classList.add('timer-danger');
+    } else if (remainingTime < 600) { // < 10 минут
+      badge.classList.add('timer-warning');
+    } else {
+      badge.classList.add('timer-primary');
+    }
+  } else if (badge.dataset.status === 'в родах') {
+    // Таймер истек, но статус еще "в родах"
+    badge.textContent = '00:00';
+    badge.classList.remove('timer-primary', 'timer-warning');
+    badge.classList.add('timer-danger');
+  }
+}
+
+// Синхронизация таймеров с сервером
+function syncTimersWithServer() {
+  const timerBadges = document.querySelectorAll('.timer-badge-modern[data-status="в родах"]');
+  
+  if (timerBadges.length === 0) return;
+  
+  const patientIds = Array.from(timerBadges).map(badge => badge.dataset.patientId);
+  
+  // Делаем запрос для каждого пациента
+  patientIds.forEach(patientId => {
+    fetch(`/api/patients/${patientId}/data`)
+      .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+      })
+      .then(data => {
+        // Обновляем кэш
+        if (patientsDataCache[patientId]) {
+          patientsDataCache[patientId].remaining_time = data.remaining_time;
+          patientsDataCache[patientId].current_timer_duration = data.current_duration;
+          patientsDataCache[patientId].status = data.status;
+        }
+        
+        // Обновляем бейдж
+        const badge = document.getElementById(`timer-${patientId}`);
+        if (badge) {
+          badge.dataset.remainingTime = data.remaining_time;
+          badge.dataset.duration = data.current_duration;
+          badge.dataset.status = data.status;
+          
+          // Если статус изменился, обновляем весь ряд
+          if (data.status !== 'в родах') {
+            const row = badge.closest('tr');
+            if (row) {
+              updatePatientRowStatus(row, data.status);
+            }
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Error syncing timer for patient', patientId, error);
+      });
+  });
+}
+
+// Обновление статуса пациента в строке
+function updatePatientRowStatus(row, newStatus) {
+  const statusBadge = row.querySelector('.status-badge-modern');
+  const timerBadge = row.querySelector('.timer-badge-modern');
+  
+  if (!statusBadge || !timerBadge) return;
+  
+  let statusColor = 'secondary';
+  let statusText = newStatus;
+  
+  if (newStatus === 'роды не начались') {
+    statusColor = 'secondary';
+    statusText = 'Роды не начались';
+  } else if (newStatus === 'в родах') {
+    statusColor = 'danger';
+    statusText = 'В родах';
+  } else if (newStatus === 'роды завершены') {
+    statusColor = 'success';
+    statusText = 'Роды завершены';
+  }
+  
+  // Обновляем статус
+  statusBadge.className = `badge status-badge-modern bg-${statusColor}`;
+  statusBadge.textContent = statusText;
+  
+  // Обновляем таймер
+  timerBadge.dataset.status = newStatus;
+  if (newStatus !== 'в родах') {
+    timerBadge.textContent = '—';
+    timerBadge.className = 'badge timer-badge-modern timer-completed';
   }
 }
 
@@ -328,9 +525,8 @@ function updatePatientsCount(count) {
 }
 
 // Инициализация при загрузке страницы
-// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOM fully loaded - new design');
+  console.log('DOM fully loaded - new design with timers');
   
   // Инициализация фильтров
   const dateFilterToggle = document.getElementById('date-filter-toggle');
@@ -382,8 +578,14 @@ document.addEventListener('DOMContentLoaded', function() {
     dateFilter.addEventListener('change', applyFilters);
   }
   
-  // ИНИЦИАЛИЗАЦИЯ КНОПОК УДАЛЕНИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ - ДОБАВЬТЕ ЭТО!
+  // Инициализация кнопок удаления
   initDeleteButtons();
+  
+  // Если есть таблица пациентов, запускаем обновление таймеров
+  if (document.getElementById('patients-table')) {
+    // Сначала загружаем данные, затем запускаем таймеры
+    applyFilters();
+  }
   
   // Добавляем анимацию для строк таблицы
   const style = document.createElement('style');
@@ -394,6 +596,50 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     .fade-in {
       animation: fadeIn 0.3s ease-out;
+    }
+    
+    /* Стили для таймеров */
+    .timer-badge-modern {
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      min-width: 85px;
+      text-align: center;
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+    
+    .timer-primary {
+      background-color: #e3f2fd !important;
+      color: #0d6efd !important;
+      border: 2px solid #0d6efd;
+    }
+    
+    .timer-warning {
+      background-color: #fff3cd !important;
+      color: #ffc107 !important;
+      border: 2px solid #ffc107;
+      animation: pulse 2s infinite;
+    }
+    
+    .timer-danger {
+      background-color: #f8d7da !important;
+      color: #dc3545 !important;
+      border: 2px solid #dc3545;
+      animation: pulse 1s infinite;
+    }
+    
+    .timer-completed {
+      background-color: #f8f9fa !important;
+      color: #6c757d !important;
+      border: 2px solid #dee2e6;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
     }
   `;
   document.head.appendChild(style);

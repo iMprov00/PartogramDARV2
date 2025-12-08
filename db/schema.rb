@@ -10,7 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2) do
+ActiveRecord::Schema[8.1].define(version: 3) do
+  create_table "measurements", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "heart_rate"
+    t.datetime "measured_at", precision: nil
+    t.integer "patient_id", null: false
+    t.integer "period", default: 1
+    t.datetime "updated_at", null: false
+    t.index ["measured_at"], name: "index_measurements_on_measured_at"
+    t.index ["patient_id"], name: "index_measurements_on_patient_id"
+  end
+
   create_table "patients", force: :cascade do |t|
     t.datetime "active_phase_start", precision: nil
     t.date "admission_date", null: false
@@ -29,4 +40,6 @@ ActiveRecord::Schema[8.1].define(version: 2) do
     t.index ["admission_date"], name: "index_patients_on_admission_date"
     t.index ["status"], name: "index_patients_on_status"
   end
+
+  add_foreign_key "measurements", "patients"
 end

@@ -1,17 +1,22 @@
+# config/database.yml
 development:
   adapter: sqlite3
   database: db/development.sqlite3
   pool: 5
   timeout: 5000
+  # Добавим настройки для корректной работы с часовыми поясами
+  encoding: utf8
 
 test:
   adapter: sqlite3
   database: db/test.sqlite3
   pool: 5
   timeout: 5000
+  encoding: utf8
 
 production:
   adapter: sqlite3
   database: db/production.sqlite3
   pool: 5
   timeout: 5000
+  encoding: utf8

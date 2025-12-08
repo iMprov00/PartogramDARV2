@@ -4,6 +4,8 @@ class Patient < ActiveRecord::Base
   validates :admission_date, presence: true
   validates :status, presence: true
   
+  has_many :measurements, dependent: :destroy
+  
   STATUSES = {
     not_started: "роды не начались",
     in_progress: "в родах",
@@ -14,7 +16,7 @@ class Patient < ActiveRecord::Base
   def as_json(options = {})
     super(options.merge(
       except: [:updated_at],
-      methods: [:status_color, :timer_text, :timer_class, :partogram_button_text, :partogram_button_class]
+      methods: [:status_color, :timer_text, :timer_class, :remaining_time, :current_timer_duration]
     ))
   end
   
@@ -32,10 +34,14 @@ class Patient < ActiveRecord::Base
   end
   
   def timer_text
-    if status == STATUSES[:in_progress]
-      calculate_timer_duration
+    return "00:00:00" if status != STATUSES[:in_progress]
+    
+    if labor_start.present?
+      # Используем текущее время с учетом часового пояса
+      duration = (Time.current.in_time_zone('Asia/Novosibirsk') - labor_start.in_time_zone('Asia/Novosibirsk')).to_i
+      format_time(duration)
     else
-      "Таймер не активен"
+      "00:00:00"
     end
   end
   
@@ -69,16 +75,36 @@ class Patient < ActiveRecord::Base
     end
   end
   
+  # Время до окончания текущего таймера в секундах
+  def remaining_time
+    return 0 unless status == STATUSES[:in_progress] && last_measurement_time
+    
+    duration = current_timer_duration * 60 # в секундах
+    elapsed = (Time.current.in_time_zone('Asia/Novosibirsk') - last_measurement_time.in_time_zone('Asia/Novosibirsk')).to_i
+    remaining = duration - elapsed
+    remaining > 0 ? remaining : 0
+  end
+  
+  # Текущая длительность таймера в минутах
+  def current_timer_duration
+    return 30 unless measurements.any?
+    
+    last_measurement = measurements.order(measured_at: :desc).first
+    # Если последнее измерение ЧДД > 120, то 15 минут, иначе 30
+    last_measurement.heart_rate > 120 ? 15 : 30
+  end
+  
+  # Время последнего измерения
+  def last_measurement_time
+    measurements.order(measured_at: :desc).first&.measured_at
+  end
+  
   private
   
-  def calculate_timer_duration
-    return "00:00:00" if labor_start.nil?
-    
-    duration = (Time.now - labor_start).to_i
-    hours = duration / 3600
-    minutes = (duration % 3600) / 60
-    seconds = duration % 60
-    
-    format("%02d:%02d:%02d", hours, minutes, seconds)
+  def format_time(seconds)
+    hours = seconds / 3600
+    minutes = (seconds % 3600) / 60
+    secs = seconds % 60
+    format("%02d:%02d:%02d", hours, minutes, secs)
   end
 end
