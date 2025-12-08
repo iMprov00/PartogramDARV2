@@ -430,27 +430,102 @@ function showLoading(show) {
 }
 
 // Показать уведомление
+// public/js/app.js - обновим функцию showAlert
 function showAlert(message, type = 'info') {
+  // Удаляем старые уведомления
+  const oldAlerts = document.querySelectorAll('.custom-notification');
+  oldAlerts.forEach(alert => alert.remove());
+  
   const alertDiv = document.createElement('div');
-  alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
-  alertDiv.style.zIndex = '1000';
-  alertDiv.style.maxWidth = '400px';
+  alertDiv.className = `custom-notification alert alert-${type} alert-dismissible fade show`;
+  
+  // Стили для корректного отображения
+  Object.assign(alertDiv.style, {
+    position: 'fixed',
+    top: '80px', // Отступ от верха под навбаром
+    right: '20px',
+    zIndex: '1060',
+    maxWidth: '400px',
+    minWidth: '300px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    animation: 'slideInRight 0.3s ease-out'
+  });
+  
   alertDiv.innerHTML = `
     <div class="d-flex align-items-center">
-      <i class="bi ${type === 'danger' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill'} me-2"></i>
-      <div>${message}</div>
+      <i class="bi ${type === 'danger' ? 'bi-exclamation-triangle-fill' : 
+                         type === 'success' ? 'bi-check-circle-fill' : 
+                         type === 'warning' ? 'bi-exclamation-circle-fill' : 
+                         'bi-info-circle-fill'} me-2"></i>
+      <div class="flex-grow-1">${message}</div>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
     </div>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   `;
   
   document.body.appendChild(alertDiv);
   
+  // Добавим стили анимации если их еще нет
+  if (!document.querySelector('#notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = `
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes slideOutRight {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+      }
+      
+      .custom-notification {
+        animation: slideInRight 0.3s ease-out;
+      }
+      
+      .custom-notification.fade {
+        animation: slideOutRight 0.3s ease-out forwards;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
   // Автоматически скрыть через 5 секунд
   setTimeout(() => {
     if (alertDiv.parentNode) {
-      alertDiv.remove();
+      alertDiv.classList.add('fade');
+      setTimeout(() => {
+        if (alertDiv.parentNode) {
+          alertDiv.remove();
+        }
+      }, 300);
     }
   }, 5000);
+  
+  // Закрытие по кнопке
+  const closeBtn = alertDiv.querySelector('.btn-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      alertDiv.classList.add('fade');
+      setTimeout(() => {
+        if (alertDiv.parentNode) {
+          alertDiv.remove();
+        }
+      }, 300);
+    });
+  }
 }
 
 // Инициализация кнопок удаления
