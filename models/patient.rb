@@ -1,4 +1,3 @@
-# models/patient.rb
 class Patient < ActiveRecord::Base
   validates :full_name, presence: true
   validates :admission_date, presence: true
@@ -93,10 +92,15 @@ class Patient < ActiveRecord::Base
   
   # Время до окончания текущего таймера в секундах
   def remaining_time
-    return 0 unless status == STATUSES[:in_progress] && last_measurement_time
+    return 0 unless status == STATUSES[:in_progress]
+    
+    # Используем последнее время измерения или начало родов
+    last_time = last_measurement_time || labor_start
+    return 0 unless last_time
     
     duration = current_timer_duration * 60 # в секундах
-    elapsed = (Time.current.in_time_zone('Asia/Novosibirsk') - last_measurement_time.in_time_zone('Asia/Novosibirsk')).to_i
+    now = Time.current.in_time_zone('Asia/Novosibirsk')
+    elapsed = (now - last_time.in_time_zone('Asia/Novosibirsk')).to_i
     remaining = duration - elapsed
     remaining > 0 ? remaining : 0
   end
@@ -122,6 +126,21 @@ class Patient < ActiveRecord::Base
                       end
     
     last_measurement_time + interval_minutes.minutes
+  end
+  
+  # Метод для API таймеров (используем существующий period)
+  def api_period
+    period
+  end
+  
+  # Метод для API таймеров
+  def api_remaining_time
+    remaining_time
+  end
+  
+  # Метод для API таймеров
+  def api_timer_duration
+    current_timer_duration
   end
   
   private

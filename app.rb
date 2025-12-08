@@ -349,3 +349,50 @@ post '/api/patients/:id/complete_labor' do
     { success: false, errors: patient.errors.full_messages }.to_json
   end
 end
+
+# app.rb - ДОБАВИМ НОВЫЕ ENDPOINTS
+
+# API для получения таймеров всех пациентов (оптимизированный)
+get '/api/patients/timers' do
+  content_type :json
+  
+  # Получаем всех пациентов с предзагрузкой последних записей
+  patients = Patient.includes(:partogram_entries).all
+  
+  # Формируем ответ с оптимизацией
+  patients_data = patients.map do |patient|
+    {
+      id: patient.id,
+      full_name: patient.full_name,
+      status: patient.status,
+      status_color: patient.status_color,
+      period: patient.period,  # Используем публичный метод period
+      remaining_time: patient.remaining_time,  # Используем публичный метод remaining_time
+      timer_duration: patient.current_timer_duration,  # Используем публичный метод
+      admission_date: patient.admission_date,
+      age: patient.age,
+      labor_start: patient.labor_start&.iso8601,
+      updated_at: patient.updated_at.iso8601
+    }
+  end
+  
+  patients_data.to_json
+end
+
+# API для получения данных таймера конкретного пациента
+get '/api/patients/:id/timer_data' do
+  content_type :json
+  patient = Patient.find(params[:id])
+  
+  {
+    id: patient.id,
+    status: patient.status,
+    period: patient.period,
+    remaining_time: patient.remaining_time,
+    timer_duration: patient.current_timer_duration,
+    last_measurement_time: patient.last_measurement_time&.iso8601,
+    next_measurement_time: patient.next_measurement_time&.iso8601,
+    labor_start: patient.labor_start&.iso8601,
+    updated_at: patient.updated_at.iso8601
+  }.to_json
+end

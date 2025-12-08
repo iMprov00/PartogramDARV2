@@ -1,51 +1,239 @@
-// public/js/partogram.js - исправленная версия
+// public/js/partogram.js - ПОЛНОСТЬЮ ОБНОВЛЕННЫЙ КОД
+
 class PartogramManager {
   constructor(patientId) {
     this.patientId = patientId;
-    this.serverTimeOffset = 0;
     this.timerInterval = null;
+    this.syncInterval = null;
     this.remainingTime = 0;
     this.currentPeriod = 1;
+    this.lastServerUpdate = null;
+    this.isPageVisible = true;
+    this.isSyncing = false;
     this.entries = [];
     this.entryToDelete = null;
+    this.lastSyncTime = 0;
+    
+    this.visibilityHandler = this.handleVisibilityChange.bind(this);
     
     this.init();
   }
   
   async init() {
-    await this.syncServerTime();
-    await this.loadPatientData();
-    await this.loadPartogramEntries();
-    this.startTimer();
+    console.log(`Initializing PartogramManager for patient ${this.patientId}`);
+    
+    // Настройка обработчиков видимости
+    this.setupVisibilityHandler();
+    
+    // Загрузка начальных данных
+    await this.loadInitialData();
+    
+    // Запуск систем
+    this.startSystems();
+    
+    // Настройка обработчиков событий
     this.setupEventListeners();
-    this.setupTimeControls();
+    
+    console.log('PartogramManager initialized');
   }
   
-  // Синхронизация времени с сервером
-  async syncServerTime() {
+  // Настройка обработчика видимости страницы
+  setupVisibilityHandler() {
+    document.addEventListener('visibilitychange', this.visibilityHandler);
+    this.isPageVisible = !document.hidden;
+    console.log(`Initial page visibility: ${this.isPageVisible ? 'visible' : 'hidden'}`);
+  }
+  
+  // Обработчик изменения видимости
+  handleVisibilityChange() {
+    const wasVisible = this.isPageVisible;
+    this.isPageVisible = !document.hidden;
+    
+    console.log(`Page visibility changed: ${wasVisible ? 'visible' : 'hidden'} -> ${this.isPageVisible ? 'visible' : 'hidden'}`);
+    
+    if (this.isPageVisible && !wasVisible) {
+      // Страница стала видимой
+      console.log('Page became visible, forcing sync');
+      this.startSystems();
+      this.syncWithServer(true);
+    } else if (!this.isPageVisible && wasVisible) {
+      // Страница скрыта
+      console.log('Page hidden, stopping systems');
+      this.stopSystems();
+    }
+  }
+  
+  // Загрузка начальных данных
+  async loadInitialData() {
     try {
-      const response = await fetch('/api/server_time');
-      const data = await response.json();
-      const serverTime = data.time;
-      const localTime = Math.floor(Date.now() / 1000);
-      this.serverTimeOffset = serverTime - localTime;
+      await Promise.all([
+        this.loadPatientData(),
+        this.loadPartogramEntries()
+      ]);
+      console.log('Initial data loaded');
     } catch (error) {
-      console.error('Ошибка синхронизации времени:', error);
+      console.error('Error loading initial data:', error);
+      this.showNotification('Ошибка загрузки данных', 'danger');
+    }
+  }
+  
+  // Запуск всех систем
+  startSystems() {
+    this.stopSystems();
+    
+    // Запуск таймера
+    this.startTimer();
+    
+    // Запуск синхронизации
+    this.startSync();
+    
+    console.log('Systems started');
+  }
+  
+  // Остановка всех систем
+  stopSystems() {
+    this.stopTimer();
+    this.stopSync();
+    console.log('Systems stopped');
+  }
+  
+  // Запуск таймера
+  startTimer() {
+    this.stopTimer();
+    
+    this.timerInterval = setInterval(() => {
+      if (this.remainingTime > 0 && this.isPageVisible) {
+        this.remainingTime--;
+        this.updateTimerDisplay();
+      }
+    }, 1000);
+    
+    console.log('Timer started');
+  }
+  
+  // Остановка таймера
+  stopTimer() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+  }
+  
+  // Запуск синхронизации
+  startSync() {
+    this.stopSync();
+    
+    // Определяем интервал в зависимости от видимости
+    const interval = this.isPageVisible ? 10000 : 30000;
+    
+    console.log(`Setting sync interval to ${interval}ms`);
+    
+    this.syncInterval = setInterval(() => {
+      this.syncWithServer(false);
+    }, interval);
+    
+    // Первая синхронизация
+    this.syncWithServer(true);
+  }
+  
+  // Остановка синхронизации
+  stopSync() {
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval);
+      this.syncInterval = null;
     }
   }
   
   // Загрузка данных пациента
-  async loadPatientData() {
+async loadPatientData() {
+  try {
+    const response = await fetch(`/api/patients/${this.patientId}/data?_=${Date.now()}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    
+    this.remainingTime = data.remaining_time;
+    this.currentPeriod = data.period || 1;
+    
+    this.updateTimerDisplay();
+    this.updatePeriodDisplay();
+    
+    console.log('Patient data loaded');
+  } catch (error) {
+    console.error('Error loading patient data:', error);
+    throw error;
+  }
+}
+  
+  // Синхронизация с сервером
+  async syncWithServer(force = false) {
+    const now = Date.now();
+    const timeSinceLastSync = now - this.lastSyncTime;
+    
+    // Защита от слишком частых запросов
+    if (this.isSyncing || (!force && timeSinceLastSync < 3000)) {
+      return;
+    }
+    
+    this.isSyncing = true;
+    
     try {
-      const response = await fetch(`/api/patients/${this.patientId}/data`);
+      console.log(`${force ? 'Forced' : 'Regular'} sync started`);
+      
+      const response = await fetch(`/api/patients/${this.patientId}/timer_data?_=${Date.now()}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const data = await response.json();
+      this.lastSyncTime = now;
+      
+      // Проверяем, изменились ли данные
+      const oldPeriod = this.currentPeriod;
+      const oldRemainingTime = this.remainingTime;
       
       this.remainingTime = data.remaining_time;
-      this.currentPeriod = data.period || 1;
+      this.currentPeriod = data.period;
+      this.lastServerUpdate = data.updated_at;
       
+      // Обновляем отображение
       this.updateTimerDisplay();
+      this.updatePeriodDisplay();
+      
+      // Если период изменился, показываем уведомление
+      if (oldPeriod !== this.currentPeriod) {
+        this.showNotification(`Переход на ${this.currentPeriod} период родов. Таймер обновлен.`, 'info');
+      }
+      
+      // Если время сильно изменилось (более чем на 10 секунд), показываем уведомление
+      if (Math.abs(oldRemainingTime - this.remainingTime) > 10) {
+        console.log(`Time corrected: ${oldRemainingTime} -> ${this.remainingTime}`);
+      }
+      
+      console.log('Sync completed');
+      
     } catch (error) {
-      console.error('Ошибка загрузки данных пациента:', error);
+      console.error('Error syncing with server:', error);
+      this.showNotification('Ошибка синхронизации с сервером', 'danger');
+    } finally {
+      this.isSyncing = false;
+    }
+  }
+  
+  // Загрузка записей партограммы
+  async loadPartogramEntries() {
+    try {
+      const response = await fetch(`/api/patients/${this.patientId}/partogram_entries?_=${Date.now()}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      this.entries = await response.json();
+      this.updatePartogramTable();
+      
+      console.log(`Loaded ${this.entries.length} partogram entries`);
+    } catch (error) {
+      console.error('Error loading partogram entries:', error);
+      throw error;
     }
   }
   
@@ -75,17 +263,6 @@ class PartogramManager {
     }
   }
   
-  // Загрузка записей партограммы
-  async loadPartogramEntries() {
-    try {
-      const response = await fetch(`/api/patients/${this.patientId}/partogram_entries`);
-      this.entries = await response.json();
-      this.updatePartogramTable();
-    } catch (error) {
-      console.error('Ошибка загрузки записей партограммы:', error);
-    }
-  }
-  
   // Обновление отображения таймера
   updateTimerDisplay() {
     const timerDisplay = document.getElementById('timer-display');
@@ -98,14 +275,32 @@ class PartogramManager {
       timerDisplay.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
       
       if (timerContainer) {
+        // Обновляем классы в зависимости от оставшегося времени и периода
         timerContainer.classList.remove('timer-danger', 'timer-warning');
         
-        if (this.remainingTime < 300) {
+        const warningThreshold = this.currentPeriod === 2 ? 150 : 300;
+        const dangerThreshold = this.currentPeriod === 2 ? 60 : 120;
+        
+        if (this.remainingTime < dangerThreshold) {
           timerContainer.classList.add('timer-danger');
-        } else if (this.remainingTime < 600) {
+        } else if (this.remainingTime < warningThreshold) {
           timerContainer.classList.add('timer-warning');
         }
       }
+    }
+  }
+  
+  // Обновление отображения периода
+  updatePeriodDisplay() {
+    const periodElement = document.querySelector('.timer-label');
+    if (periodElement) {
+      periodElement.textContent = `Период ${this.currentPeriod}`;
+    }
+    
+    // Обновляем текст в форме если есть
+    const periodHint = document.querySelector('small.text-muted');
+    if (periodHint && this.currentPeriod === 1) {
+      periodHint.textContent = '10 см = 2 период';
     }
   }
   
@@ -116,9 +311,25 @@ class PartogramManager {
     
     tbody.innerHTML = '';
     
+    if (this.entries.length === 0) {
+      tbody.innerHTML = `
+        <tr class="no-data-row">
+          <td colspan="8">
+            <div class="text-center py-4">
+              <i class="bi bi-clipboard-data display-4 d-block mb-3 text-muted"></i>
+              <h6 class="text-secondary">Нет измерений</h6>
+              <p class="text-muted">Добавьте первое измерение</p>
+            </div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
     this.entries.forEach(entry => {
       const row = document.createElement('tr');
       row.id = `entry-row-${entry.id}`;
+      row.className = 'fade-in';
       
       const time = new Date(entry.time);
       const timeStr = time.toLocaleTimeString('ru-RU', { 
@@ -127,23 +338,7 @@ class PartogramManager {
         second: '2-digit'
       });
       
-      let dilationBadge = '—';
-      if (entry.cervical_dilation !== null) {
-        const badgeClass = entry.cervical_dilation >= 10 ? 'bg-success' : 'bg-info';
-        dilationBadge = `<span class="badge ${badgeClass}">${entry.cervical_dilation} см</span>`;
-      }
-      
-      let contractionsInfo = '—';
-      if (entry.contraction_frequency) {
-        contractionsInfo = `${entry.contraction_frequency} в 10 мин`;
-        if (entry.contraction_duration) {
-          contractionsInfo += ` / ${entry.contraction_duration} сек`;
-        }
-        if (entry.pushing) {
-          contractionsInfo += ' (П)';
-        }
-      }
-      
+      // Форматируем данные для отображения
       const details = [
         entry.fetal_heart_rate ? `ЧСС: ${entry.fetal_heart_rate}` : null,
         entry.cervical_dilation !== null ? `Раскрытие: ${entry.cervical_dilation} см` : null,
@@ -153,11 +348,34 @@ class PartogramManager {
       row.innerHTML = `
         <td>${timeStr}</td>
         <td>${entry.fetal_heart_rate || '—'}</td>
-        <td>${entry.decelerations || '—'}</td>
+        <td>
+          ${entry.decelerations ? 
+            `<span class="badge ${entry.decelerations === 'нет' ? 'bg-secondary' : 'bg-warning'}">
+              ${entry.decelerations}
+            </span>` : 
+            '—'
+          }
+        </td>
         <td>${entry.amniotic_fluid || '—'}</td>
         <td>${entry.presentation || '—'}</td>
-        <td>${dilationBadge}</td>
-        <td>${contractionsInfo}</td>
+        <td>
+          ${entry.cervical_dilation !== null ? 
+            `<span class="badge ${entry.cervical_dilation >= 10 ? 'bg-success' : 'bg-info'}">
+              ${entry.cervical_dilation} см
+            </span>` : 
+            '—'
+          }
+        </td>
+        <td>
+          ${entry.contraction_frequency ? 
+            `<div>
+              <small>${entry.contraction_frequency} в 10 мин</small>
+              ${entry.contraction_duration ? `<br><small>${entry.contraction_duration} сек</small>` : ''}
+              ${entry.pushing ? '<br><span class="badge bg-info">Потуги</span>' : ''}
+            </div>` : 
+            '—'
+          }
+        </td>
         <td>
           <button type="button" 
                   class="btn btn-sm btn-outline-danger delete-entry-btn" 
@@ -173,46 +391,43 @@ class PartogramManager {
       tbody.appendChild(row);
     });
     
+    // Инициализируем кнопки удаления
     this.initDeleteEntryButtons();
-  }
-  
-  // Запуск таймера
-  startTimer() {
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval);
-    }
-    
-    this.timerInterval = setInterval(() => {
-      if (this.remainingTime > 0) {
-        this.remainingTime--;
-        this.updateTimerDisplay();
-      }
-    }, 1000);
   }
   
   // Настройка обработчиков событий
   setupEventListeners() {
+    // Форма партограммы
     const partogramForm = document.getElementById('partogram-form');
     if (partogramForm) {
       partogramForm.addEventListener('submit', (e) => this.handlePartogramSubmit(e));
     }
     
+    // Кнопка завершения родов
     const completeBtn = document.getElementById('complete-labor-btn');
     if (completeBtn) {
       completeBtn.addEventListener('click', () => this.showCompleteModal());
     }
     
+    // Подтверждение завершения родов
     const confirmCompleteBtn = document.getElementById('confirm-complete-labor');
     if (confirmCompleteBtn) {
       confirmCompleteBtn.addEventListener('click', () => this.completeLabor());
     }
     
+    // Подтверждение удаления записи
     const confirmDeleteEntryBtn = document.getElementById('confirm-delete-entry');
     if (confirmDeleteEntryBtn) {
       confirmDeleteEntryBtn.addEventListener('click', () => this.deleteSelectedEntry());
     }
     
+    // Кнопки удаления записей
     this.initDeleteEntryButtons();
+    
+    // Настройка управления временем
+    this.setupTimeControls();
+    
+    console.log('Event listeners setup completed');
   }
   
   // Инициализация кнопок удаления записей
@@ -250,11 +465,23 @@ class PartogramManager {
       detailsElement.textContent = this.entryToDelete.details || 'Нет дополнительных данных';
     }
     
-    const modal = new bootstrap.Modal(document.getElementById('deleteEntryModal'));
-    modal.show();
+    const modalElement = document.getElementById('deleteEntryModal');
+    if (modalElement) {
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+    }
   }
   
-  // Функция для закрытия модального окна
+  // Показать модальное окно завершения родов
+  showCompleteModal() {
+    const modalElement = document.getElementById('completeLaborModal');
+    if (modalElement) {
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+    }
+  }
+  
+  // Закрыть модальное окно
   closeModal(modalId) {
     const modalElement = document.getElementById(modalId);
     if (!modalElement) return;
@@ -262,52 +489,6 @@ class PartogramManager {
     const modal = bootstrap.Modal.getInstance(modalElement);
     if (modal) {
       modal.hide();
-    }
-  }
-  
-  // Удаление выбранной записи
-  async deleteSelectedEntry() {
-    if (!this.entryToDelete) {
-      this.showNotification('Ошибка: запись для удаления не выбрана', 'danger');
-      return;
-    }
-    
-    const confirmBtn = document.getElementById('confirm-delete-entry');
-    const originalText = confirmBtn.innerHTML;
-    confirmBtn.innerHTML = '<i class="bi bi-trash me-2"></i>Удаление...';
-    confirmBtn.disabled = true;
-    
-    try {
-      const response = await fetch(`/api/patients/${this.patientId}/partogram_entries/${this.entryToDelete.id}`, {
-        method: 'DELETE'
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        // Закрываем модальное окно
-        this.closeModal('deleteEntryModal');
-        
-        // Показываем уведомление
-        this.showNotification('Измерение удалено! Страница перезагрузится...', 'success');
-        
-        // Перезагружаем страницу через 1.5 секунды
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-        
-      } else {
-        this.showNotification('Ошибка при удалении: ' + (result.errors || ['Неизвестная ошибка']).join(', '), 'danger');
-        confirmBtn.innerHTML = originalText;
-        confirmBtn.disabled = false;
-      }
-    } catch (error) {
-      this.showNotification('Ошибка при удалении записи: ' + error.message, 'danger');
-      console.error('Ошибка:', error);
-      confirmBtn.innerHTML = originalText;
-      confirmBtn.disabled = false;
-    } finally {
-      this.entryToDelete = null;
     }
   }
   
@@ -319,21 +500,24 @@ class PartogramManager {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
     
+    // Проверка заполнения обязательных полей
     if (!data.fetal_heart_rate && !data.cervical_dilation && !data.contraction_frequency) {
       this.showNotification('Заполните хотя бы одно поле измерения', 'warning');
       return;
     }
     
+    // Обработка времени измерения
     const useCurrentTime = document.getElementById('use-current-time').checked;
     if (useCurrentTime) {
       delete data.measurement_time;
     } else {
       const timeInput = document.getElementById('measurement-time');
-      if (timeInput.value) {
+      if (timeInput && timeInput.value) {
         data.measurement_time = timeInput.value;
       }
     }
     
+    // Очистка пустых значений
     Object.keys(data).forEach(key => {
       if (data[key] === '' || data[key] === undefined) {
         delete data[key];
@@ -364,32 +548,91 @@ class PartogramManager {
       const result = await response.json();
       
       if (result.success) {
-        this.showNotification('Измерение сохранено! Страница перезагрузится...', 'success');
+        this.showNotification('Измерение сохранено! Синхронизация...', 'success');
         
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        // Синхронизируемся с сервером
+        await this.syncWithServer(true);
+        
+        // Обновляем записи
+        await this.loadPartogramEntries();
+        
+        // Сбрасываем форму
+        form.reset();
+        
+        // Обновляем время в форме
+        const timeInput = document.getElementById('measurement-time');
+        const useCurrentTimeCheckbox = document.getElementById('use-current-time');
+        if (useCurrentTimeCheckbox && useCurrentTimeCheckbox.checked && timeInput) {
+          const now = new Date();
+          const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+          timeInput.value = localDateTime;
+        }
+        
+        // Показываем финальное уведомление
+        this.showNotification('Данные обновлены и синхронизированы', 'success', 2000);
+        
       } else {
-        this.showNotification('Ошибка при сохранении: ' + result.errors.join(', '), 'danger');
-        saveBtn.innerHTML = originalText;
-        saveBtn.disabled = false;
+        this.showNotification('Ошибка при сохранении: ' + (result.errors || ['Неизвестная ошибка']).join(', '), 'danger');
       }
     } catch (error) {
       this.showNotification('Ошибка при сохранении измерения: ' + error.message, 'danger');
       console.error('Ошибка:', error);
+    } finally {
       saveBtn.innerHTML = originalText;
       saveBtn.disabled = false;
     }
   }
   
-  // Показать модальное окно завершения
-  showCompleteModal() {
-    const modal = new bootstrap.Modal(document.getElementById('completeLaborModal'));
-    modal.show();
+  // Удаление выбранной записи
+  async deleteSelectedEntry() {
+    if (!this.entryToDelete) {
+      this.showNotification('Ошибка: запись для удаления не выбрана', 'danger');
+      return;
+    }
+    
+    const confirmBtn = document.getElementById('confirm-delete-entry');
+    const originalText = confirmBtn.innerHTML;
+    confirmBtn.innerHTML = '<i class="bi bi-trash me-2"></i>Удаление...';
+    confirmBtn.disabled = true;
+    
+    try {
+      const response = await fetch(`/api/patients/${this.patientId}/partogram_entries/${this.entryToDelete.id}`, {
+        method: 'DELETE'
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Закрываем модальное окно
+        this.closeModal('deleteEntryModal');
+        
+        // Синхронизируемся с сервером
+        await this.syncWithServer(true);
+        
+        // Обновляем записи
+        await this.loadPartogramEntries();
+        
+        this.showNotification('Измерение удалено', 'success');
+      } else {
+        this.showNotification('Ошибка при удалении: ' + (result.errors || ['Неизвестная ошибка']).join(', '), 'danger');
+      }
+    } catch (error) {
+      this.showNotification('Ошибка при удалении записи: ' + error.message, 'danger');
+      console.error('Ошибка:', error);
+    } finally {
+      confirmBtn.innerHTML = originalText;
+      confirmBtn.disabled = false;
+      this.entryToDelete = null;
+    }
   }
   
   // Завершение родов
   async completeLabor() {
+    const confirmBtn = document.getElementById('confirm-complete-labor');
+    const originalText = confirmBtn.innerHTML;
+    confirmBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Завершение...';
+    confirmBtn.disabled = true;
+    
     try {
       const response = await fetch(`/api/patients/${this.patientId}/complete_labor`, {
         method: 'POST',
@@ -401,37 +644,43 @@ class PartogramManager {
       const data = await response.json();
       
       if (data.success) {
-        if (this.timerInterval) {
-          clearInterval(this.timerInterval);
-          this.timerInterval = null;
+        // Останавливаем системы
+        this.stopSystems();
+        
+        // Закрываем модальное окно
+        this.closeModal('completeLaborModal');
+        
+        // Обновляем статус пациента
+        await this.loadPatientData();
+        
+        // Отключаем кнопку завершения родов
+        const completeBtn = document.getElementById('complete-labor-btn');
+        if (completeBtn) {
+          completeBtn.disabled = true;
         }
         
-        const modal = bootstrap.Modal.getInstance(document.getElementById('completeLaborModal'));
-        if (modal) {
-          modal.hide();
-        }
+        this.showNotification('Роды успешно завершены!', 'success');
         
-        this.showNotification('Роды успешно завершены! Страница перезагрузится...', 'success');
-        
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
       } else {
         this.showNotification('Ошибка при завершении родов', 'danger');
       }
     } catch (error) {
       this.showNotification('Ошибка при завершении родов', 'danger');
       console.error('Ошибка:', error);
+    } finally {
+      confirmBtn.innerHTML = originalText;
+      confirmBtn.disabled = false;
     }
   }
   
   // Показать уведомление
-  showNotification(message, type = 'info') {
-    const oldAlerts = document.querySelectorAll('.custom-notification');
+  showNotification(message, type = 'info', duration = 5000) {
+    // Удаляем старые уведомления
+    const oldAlerts = document.querySelectorAll('.partogram-notification');
     oldAlerts.forEach(alert => alert.remove());
     
     const alertDiv = document.createElement('div');
-    alertDiv.className = `custom-notification alert alert-${type} alert-dismissible fade show`;
+    alertDiv.className = `partogram-notification alert alert-${type} alert-dismissible fade show`;
     
     Object.assign(alertDiv.style, {
       position: 'fixed',
@@ -459,30 +708,58 @@ class PartogramManager {
     
     setTimeout(() => {
       if (alertDiv.parentNode) {
-        alertDiv.remove();
+        alertDiv.classList.add('fade');
+        setTimeout(() => {
+          if (alertDiv.parentNode) {
+            alertDiv.remove();
+          }
+        }, 300);
       }
-    }, 5000);
+    }, duration);
     
     const closeBtn = alertDiv.querySelector('.btn-close');
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
-        alertDiv.remove();
+        alertDiv.classList.add('fade');
+        setTimeout(() => {
+          if (alertDiv.parentNode) {
+            alertDiv.remove();
+          }
+        }, 300);
       });
     }
+  }
+  
+  // Очистка при уничтожении
+  cleanup() {
+    this.stopSystems();
+    document.removeEventListener('visibilitychange', this.visibilityHandler);
+    console.log('PartogramManager cleaned up');
   }
 }
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
-  const timerElement = document.getElementById('timer-display-container');
-  if (timerElement) {
-    const urlParts = window.location.pathname.split('/');
-    const patientId = urlParts[urlParts.length - 2];
+  console.log('Partogram page loaded');
+  
+  // Определяем ID пациента из URL
+  const urlParts = window.location.pathname.split('/');
+  const patientId = urlParts[urlParts.length - 2];
+  
+  if (patientId && !isNaN(patientId)) {
+    console.log(`Initializing for patient ID: ${patientId}`);
     
-    if (patientId && !isNaN(patientId)) {
-      window.partogramManager = new PartogramManager(patientId);
-    } else {
-      console.error('Не удалось определить ID пациента');
-    }
+    // Создаем экземпляр менеджера
+    window.partogramManager = new PartogramManager(patientId);
+    
+    // Очистка при закрытии страницы
+    window.addEventListener('beforeunload', function() {
+      if (window.partogramManager) {
+        window.partogramManager.cleanup();
+      }
+    });
+    
+  } else {
+    console.error('Не удалось определить ID пациента из URL:', window.location.pathname);
   }
 });
