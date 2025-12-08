@@ -1,126 +1,205 @@
-/* public/css/components/timers.css */
-/* Стили для таймеров */
+/* /public/css/components/timers.css - Дополнительные стили для партограммы */
 
-/* Таймер на главной странице */
-.timer-badge-modern {
-  font-family: 'Courier New', monospace;
-  font-weight: bold;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  min-width: 85px;
-  text-align: center;
+/* Таймер в партограмме */
+.timer-display-partogram {
+    font-family: 'Courier New', monospace;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-dark) 100%);
+    padding: 1rem 1.5rem;
+    border-radius: 16px;
+    border: none;
+    text-align: center;
+    min-width: 140px;
+    box-shadow: 0 4px 15px rgba(84, 198, 84, 0.2);
+    display: inline-block;
 }
 
-.timer-primary {
-  background-color: #e3f2fd !important;
-  color: #0d6efd !important;
-  border: 2px solid #0d6efd;
+.timer-display-partogram .timer-label {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    display: block;
+    margin-bottom: 0.25rem;
+    font-family: var(--bs-body-font-family);
 }
 
-.timer-warning {
-  background-color: #fff3cd !important;
-  color: #ffc107 !important;
-  border: 2px solid #ffc107;
-  animation: pulse 2s infinite;
+.timer-display-partogram .timer-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1.2;
 }
 
-.timer-danger {
-  background-color: #f8d7da !important;
-  color: #dc3545 !important;
-  border: 2px solid #dc3545;
-  animation: pulse 1s infinite;
+.timer-display-partogram.timer-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
 }
 
-.timer-completed {
-  background-color: #f8f9fa !important;
-  color: #6c757d !important;
-  border: 2px solid #dee2e6;
+.timer-display-partogram.timer-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    animation: pulse 1s infinite;
 }
 
-/* Анимация пульсации для срочных таймеров */
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.7; }
-  100% { opacity: 1; }
+/* Карточка информации о пациентке в партограмме */
+.patient-info-partogram {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 2px solid rgba(84, 198, 84, 0.1);
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
-/* Таймер на странице партограммы */
-.timer-display-large {
-  font-family: 'Courier New', monospace;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #0d6efd;
-  background: #f8f9fa;
-  padding: 0.75rem 1.5rem;
-  border-radius: 12px;
-  border: 3px solid #0d6efd;
-  text-align: center;
-  min-width: 140px;
+.patient-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
 }
 
-.timer-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem;
+.patient-main-info h4 {
+    color: var(--bs-primary-dark);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
 }
 
-.timer-circle {
-  position: relative;
-  width: 200px;
-  height: 200px;
+.patient-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.progress-ring {
-  transform: rotate(-90deg);
+.patient-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #495057;
 }
 
-.progress-ring-circle {
-  transition: stroke-dashoffset 0.5s ease;
+.patient-detail-item i {
+    color: var(--bs-primary);
+    width: 16px;
 }
 
-.timer-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-family: 'Courier New', monospace;
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #333;
+.status-and-timer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.75rem;
 }
 
-/* Отображение периода */
-.current-period-display {
-  padding: 1.5rem;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-  border: 2px solid #dee2e6;
+/* Форма партограммы - компактный вариант */
+.partogram-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
 }
 
-.period-label {
-  font-size: 0.9rem;
-  color: #6c757d;
-  margin-bottom: 0.5rem;
+.partogram-form-section {
+    background: white;
+    padding: 1.25rem;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    margin-bottom: 1rem;
 }
 
-.period-value {
-  font-size: 3rem;
-  font-weight: bold;
-  color: #0d6efd;
-  line-height: 1;
+.partogram-form-section h6 {
+    color: var(--bs-primary);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(84, 198, 84, 0.1);
 }
 
-.period-duration {
-  font-size: 1rem;
-  color: #495057;
-  margin-top: 0.5rem;
+/* Таблица партограммы */
+.partogram-table-modern {
+    font-size: 0.9rem;
 }
 
-/* Карточка информации о пациентке */
-.patient-info-card {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 1.5rem;
-  border: 2px solid #e9ecef;
+.partogram-table-modern th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+.partogram-table-modern td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+}
+
+/* Управление временем */
+.time-control-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.time-control-group .form-check {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.time-input-group {
+    flex: 1;
+}
+
+/* Медиа-запросы для адаптивности партограммы */
+@media (max-width: 992px) {
+    .partogram-form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .patient-details-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .patient-info-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .status-and-timer {
+        align-items: stretch;
+        width: 100%;
+    }
+    
+    .timer-display-partogram {
+        width: 100%;
+    }
+    
+    .partogram-form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .patient-details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .time-control-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .time-input-group {
+        width: 100%;
+    }
+}
+
+/* Модификаторы для формы */
+.form-control-smaller {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.9rem !important;
+}
+
+.select-smaller {
+    min-height: 46px !important;
 }
