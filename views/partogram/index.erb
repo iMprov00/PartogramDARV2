@@ -1,0 +1,376 @@
+<!-- views/patients/show.erb -->
+<div class="card fade-in-card">
+  <div class="card-header-modern">
+    <h5 class="card-title">
+      <i class="bi bi-graph-up me-2"></i>Партограмма пациентки
+    </h5>
+  </div>
+  <div class="card-body-modern">
+    <!-- Информация о пациентке -->
+    <div class="patient-info-card mb-4">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <h4><%= @patient.full_name %></h4>
+          <div class="text-muted">
+            <div><i class="bi bi-calendar me-1"></i> Дата поступления: <%= @patient.admission_date.strftime('%d.%m.%Y') %></div>
+            <% if @patient.history_number.present? %>
+              <div><i class="bi bi-file-text me-1"></i> № истории: <%= @patient.history_number %></div>
+            <% end %>
+            <% if @patient.parity.present? %>
+              <div><i class="bi bi-123 me-1"></i> Порядок родов: <%= @patient.parity %></div>
+            <% end %>
+            <% if @patient.gestational_age.present? %>
+              <div><i class="bi bi-calendar-week me-1"></i> Срок беременности: <%= @patient.gestational_age %> недель</div>
+            <% end %>
+          </div>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-md-end gap-3">
+            <span class="badge status-badge-modern bg-<%= @patient.status_color %> fs-6">
+              <%= @patient.status %>
+            </span>
+            <!-- ТАЙМЕР ВОЗВРАЩАЕМ -->
+            <div class="timer-display-large" id="timer-display-container">
+              <div id="timer-display">00:00:00</div>
+              <small class="text-muted">Период: <span id="current-period"><%= @patient.period %></span></small>
+            </div>
+          </div>
+          <div class="mt-2">
+            <div class="text-muted">
+              <small>След. измерение: <span id="next-measurement"><%= @patient.next_measurement_time&.strftime('%H:%M') || '—' %></span></small>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Дополнительная информация -->
+      <div class="row mt-3">
+        <div class="col-md-4">
+          <% if @patient.labor_start.present? %>
+            <div><small>Начало родов: <%= format_time(@patient.labor_start) %></small></div>
+          <% end %>
+        </div>
+        <div class="col-md-4">
+          <% if @patient.active_phase_start.present? %>
+            <div><small>Начало активной фазы: <%= format_time(@patient.active_phase_start) %></small></div>
+          <% end %>
+        </div>
+        <div class="col-md-4">
+          <% if @patient.membrane_rupture.present? %>
+            <div><small>Излитие вод: <%= format_time(@patient.membrane_rupture) %></small></div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Форма для заполнения партограммы -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-clipboard-data me-2"></i>Добавить измерение в партограмму</h6>
+      </div>
+      <div class="card-body">
+        <form id="partogram-form">
+          <div class="row g-3">
+            <!-- Время измерения с чекбоксом -->
+            <div class="col-md-4">
+              <div class="mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="use-current-time" checked>
+                  <label class="form-check-label" for="use-current-time">
+                    Использовать текущее время
+                  </label>
+                </div>
+              </div>
+              
+              <div class="time-input-group">
+                <label for="measurement-time" class="form-label">Время измерения</label>
+                <input type="datetime-local" 
+                       class="form-control" 
+                       id="measurement-time" 
+                       name="measurement_time"
+                       disabled>
+                <small class="text-muted">Оставьте поле активным для ручного ввода времени</small>
+              </div>
+            </div>
+            
+            <!-- ЧСС плода и децелерации -->
+            <div class="col-md-4">
+              <label for="fetal-heart-rate" class="form-label">ЧСС плода</label>
+              <input type="number" class="form-control" id="fetal-heart-rate" name="fetal_heart_rate" min="60" max="200" placeholder="уд/мин">
+            </div>
+            
+            <div class="col-md-4">
+              <label for="decelerations" class="form-label">Децелерации</label>
+              <select class="form-select" id="decelerations" name="decelerations">
+                <option value="">Нет</option>
+                <option value="ран">Ранние</option>
+                <option value="вар">Вариабельные</option>
+                <option value="поз">Поздние</option>
+              </select>
+            </div>
+            
+            <!-- Околоплодные воды -->
+            <div class="col-md-3">
+              <label for="amniotic-fluid" class="form-label">Околоплодные воды</label>
+              <select class="form-select" id="amniotic-fluid" name="amniotic_fluid">
+                <option value="">—</option>
+                <option value="Ц">Целый пузырь</option>
+                <option value="С">Светлые, чистые</option>
+                <option value="М">С меконием</option>
+                <option value="К">С кровью</option>
+              </select>
+            </div>
+            
+            <!-- Предлежание, родовая опухоль, конфигурация -->
+            <div class="col-md-3">
+              <label for="presentation" class="form-label">Предлежание</label>
+              <select class="form-select" id="presentation" name="presentation">
+                <option value="">—</option>
+                <option value="А">Передний вид</option>
+                <option value="Р">Задний вид</option>
+                <option value="Т">Поперечное</option>
+              </select>
+            </div>
+            
+            <div class="col-md-3">
+              <label for="caput" class="form-label">Родовая опухоль</label>
+              <select class="form-select" id="caput" name="caput">
+                <option value="">—</option>
+                <option value="0">0 - нет</option>
+                <option value="+">+ - слабая</option>
+                <option value="++">++ - умеренная</option>
+                <option value="+++">+++ - большая</option>
+              </select>
+            </div>
+            
+            <div class="col-md-3">
+              <label for="molding" class="form-label">Конфигурация головки</label>
+              <select class="form-select" id="molding" name="molding">
+                <option value="">—</option>
+                <option value="О">О - нет</option>
+                <option value="+">+ - сближение</option>
+                <option value="++">++ - захождение с репозицией</option>
+                <option value="+++">+++ - захождение без репозиции</option>
+              </select>
+            </div>
+            
+            <!-- Состояние матери -->
+            <div class="col-md-3">
+              <label for="maternal-pulse" class="form-label">Пульс матери</label>
+              <input type="number" class="form-control" id="maternal-pulse" name="maternal_pulse" min="40" max="180" placeholder="уд/мин">
+            </div>
+            
+            <div class="col-md-3">
+              <label for="blood-pressure" class="form-label">АД матери</label>
+              <input type="text" class="form-control" id="blood-pressure" name="blood_pressure" placeholder="120/80">
+            </div>
+            
+            <div class="col-md-3">
+              <label for="temperature" class="form-label">Температура</label>
+              <input type="number" class="form-control" id="temperature" name="temperature" step="0.1" min="35" max="42" placeholder="°C">
+            </div>
+            
+            <div class="col-md-3">
+              <label for="urination" class="form-label">Мочеиспускание</label>
+              <select class="form-select" id="urination" name="urination">
+                <option value="">—</option>
+                <option value="true">Да</option>
+                <option value="false">Нет</option>
+              </select>
+            </div>
+            
+            <!-- Схватки -->
+            <div class="col-md-4">
+              <label for="contraction-frequency" class="form-label">Частота схваток</label>
+              <input type="number" class="form-control" id="contraction-frequency" name="contraction_frequency" min="0" max="10" placeholder="в 10 мин">
+            </div>
+            
+            <div class="col-md-4">
+              <label for="contraction-duration" class="form-label">Длит. схваток</label>
+              <input type="number" class="form-control" id="contraction-duration" name="contraction_duration" min="0" max="120" placeholder="сек">
+            </div>
+            
+            <div class="col-md-4">
+              <label for="pushing" class="form-label">Потуги</label>
+              <select class="form-select" id="pushing" name="pushing">
+                <option value="">—</option>
+                <option value="true">Да</option>
+                <option value="false">Нет</option>
+              </select>
+            </div>
+            
+            <!-- Раскрытие и опускание -->
+            <div class="col-md-3">
+              <label for="cervical-dilation" class="form-label">Раскрытие шейки</label>
+              <select class="form-select" id="cervical-dilation" name="cervical_dilation">
+                <option value="">—</option>
+                <% (0..10).each do |cm| %>
+                  <option value="<%= cm %>"><%= cm %> см</option>
+                <% end %>
+              </select>
+              <small class="text-muted">При 10 см - 2 период</small>
+            </div>
+            
+            <div class="col-md-3">
+              <label for="head-descent" class="form-label">Опускание головки</label>
+              <select class="form-select" id="head-descent" name="head_descent">
+                <option value="">—</option>
+                <option value="5">5 - над входом</option>
+                <option value="4">4 - 4/5 над лоном</option>
+                <option value="3">3 - 3/5 над лоном</option>
+                <option value="2">2 - 2/5 над лоном</option>
+                <option value="1">1 - 1/5 над лоном</option>
+                <option value="0">0 - не пальпируется</option>
+              </select>
+            </div>
+            
+            <!-- Медикаменты -->
+            <div class="col-md-3">
+              <label for="oxytocin" class="form-label">Окситоцин</label>
+              <input type="text" class="form-control" id="oxytocin" name="oxytocin" placeholder="доза, скорость">
+            </div>
+            
+            <div class="col-md-3">
+              <label for="medications" class="form-label">Другие препараты</label>
+              <input type="text" class="form-control" id="medications" name="medications" placeholder="название, доза">
+            </div>
+            
+            <div class="col-md-6">
+              <label for="iv-fluids" class="form-label">Внутривенные инфузии</label>
+              <input type="text" class="form-control" id="iv-fluids" name="iv_fluids" placeholder="препарат, объем">
+            </div>
+            
+            <!-- Кнопки -->
+            <div class="col-12 mt-3">
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1" id="save-partogram-btn">
+                  <i class="bi bi-save me-2"></i>Сохранить измерение
+                </button>
+                <button type="button" class="btn btn-success" id="complete-labor-btn" <%= 'disabled' if @patient.status == 'роды завершены' %>>
+                  <i class="bi bi-check-circle me-2"></i>Завершить роды
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- История измерений партограммы -->
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>История измерений партограммы</h6>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-modern" id="partogram-table">
+            <thead>
+              <tr>
+                <th>Время</th>
+                <th>ЧСС плода</th>
+                <th>Децелерации</th>
+                <th>Воды</th>
+                <th>Предлежание</th>
+                <th>Раскрытие</th>
+                <th>Схватки</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="partogram-tbody">
+              <% @patient.partogram_entries.order(time: :desc).limit(20).each do |entry| %>
+                <tr>
+                  <td><%= format_time(entry.time) %></td>
+                  <td><%= entry.fetal_heart_rate || '—' %></td>
+                  <td><%= entry.decelerations || '—' %></td>
+                  <td><%= entry.amniotic_fluid || '—' %></td>
+                  <td><%= entry.presentation || '—' %></td>
+                  <td>
+                    <% if entry.cervical_dilation %>
+                      <span class="badge <%= entry.cervical_dilation >= 10 ? 'bg-success' : 'bg-info' %>">
+                        <%= entry.cervical_dilation %> см
+                      </span>
+                    <% else %>
+                      —
+                    <% end %>
+                  </td>
+                  <td>
+                    <% if entry.contraction_frequency %>
+                      <%= entry.contraction_frequency %> в 10 мин / <%= entry.contraction_duration %> сек
+                    <% else %>
+                      —
+                    <% end %>
+                  </td>
+                  <td>
+                    <button type="button" 
+                            class="btn btn-sm btn-outline-danger delete-entry-btn" 
+                            data-entry-id="<%= entry.id %>"
+                            data-entry-time="<%= format_time(entry.time) %>"
+                            data-entry-details="<%= "ЧСС: #{entry.fetal_heart_rate || '—'}, Раскрытие: #{entry.cervical_dilation || '—'} см" %>"
+                            title="Удалить">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Кнопки навигации -->
+    <div class="d-flex justify-content-between mt-4">
+      <a href="/patients" class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Назад к списку
+      </a>
+      <a href="/patients/<%= @patient.id %>/edit" class="btn btn-outline-secondary">
+        <i class="bi bi-pencil me-1"></i> Редактировать
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для завершения родов -->
+<div class="modal fade" id="completeLaborModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Завершение родов</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Вы уверены, что хотите завершить роды для пациентки <strong><%= @patient.full_name %></strong>?</p>
+        <p class="text-danger">После этого статус изменится на "роды завершены" и таймер остановится.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-success" id="confirm-complete-labor">Завершить роды</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для удаления записи партограммы -->
+<div class="modal fade" id="deleteEntryModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Удаление записи партограммы</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Вы уверены, что хотите удалить запись партограммы?</p>
+        <p><strong>Время:</strong> <span id="entry-time-to-delete"></span></p>
+        <p><strong>Данные:</strong> <span id="entry-details-to-delete"></span></p>
+        <p class="text-danger">Это действие нельзя отменить.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-danger" id="confirm-delete-entry">Удалить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Подключим скрипт партограммы -->
+<script src="/js/partogram.js"></script>

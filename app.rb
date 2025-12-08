@@ -165,7 +165,7 @@ end
 # Страница партограммы
 get '/patients/:id/partogram' do
   @patient = Patient.find(params[:id])
-  erb :'patients/show'
+  erb :'partogram/index'
 end
 
 # API для поиска пациентов
